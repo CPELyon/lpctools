@@ -15,12 +15,13 @@
 #include <sys/stat.h>
 
 #include <string.h>
-
-#include <termios.h>
-#include <ctype.h>
 #include <errno.h>
+#include <getopt.h>
 
-#include <getopt.h> /* for getopt */
+#include <termios.h> /* for serial config */
+#include <ctype.h>
+
+#include "isp_utils.h"
 
 #define PROG_NAME "LPC11xx ISP"
 #define VERSION   "0.01"
@@ -66,7 +67,7 @@ void help(char *prog_name)
 
 #define SERIAL_BUFSIZE  128
 
-#define SYNCHRO_START '?'
+#define SYNCHRO_START "?"
 #define SYNCHRO  "Synchronized"
 
 #define SERIAL_BAUD  B115200
@@ -104,13 +105,13 @@ int serial_open(int baudrate)
 	return 0;
 }
 
-int serial_write(const char* buf, int buf_size)
+int serial_write(const char* buf, unsigned int buf_size)
 {
 	int nb = 0;
 
 	if (trace_on) {
 		printf("Sending %d :\n", buf_size);
-		/* FIXME : display data as in hexdump -C */
+		isp_dump((unsigned char*)buf, buf_size);
 	}
 	nb = write(serial_fd, buf, buf_size);
 	if (nb <= 0) {
@@ -129,7 +130,7 @@ int isp_ret_code(char* buf)
 	return 0;
 }
 
-int serial_read(char* buf, int buf_size)
+int serial_read(char* buf, unsigned int buf_size)
 {
 	int nb = 0;
 
@@ -143,7 +144,7 @@ int serial_read(char* buf, int buf_size)
 	}
 	if (trace_on) {
 		printf("Received : %d octets\n", nb);
-		/* FIXME : display data as in hexdump -C */
+		isp_dump((unsigned char*)buf, nb);
 	}
 	return nb;
 }
@@ -155,7 +156,7 @@ int connect()
 	char buf[SERIAL_BUFSIZE];
 
 	/* Send synchronize request */
-	serial_write("?", 1);
+	serial_write(SYNCHRO_START, 1);
 
 	/* Wait for answer */
 	serial_read(buf, SERIAL_BUFSIZE);
