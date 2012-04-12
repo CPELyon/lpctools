@@ -22,6 +22,7 @@
 #include <ctype.h>
 
 #include "isp_utils.h"
+#include "isp_commands.h"
 
 #define PROG_NAME "LPC11xx ISP"
 #define VERSION   "0.01"
@@ -65,63 +66,9 @@ void help(char *prog_name)
 	fprintf(stderr, "-----------------------------------------------------------------------\n");
 }
 
-#define SERIAL_BUFSIZE  128
-
-#define SYNCHRO_START "?"
-#define SYNCHRO  "Synchronized"
-
 #define SERIAL_BAUD  B115200
 
 int trace_on = 0;
-
-
-int isp_ret_code(char* buf)
-{
-	if (trace_on) {
-		/* FIXME : Find how return code are sent (binary or ASCII) */
-		printf("Received code: '0x%02x'\n", *buf);
-	}
-	return 0;
-}
-
-
-/* Connect or reconnect to the target.
- * Return positive value when connection is OK, or negative value otherwise.
- */
-int isp_connect()
-{
-	char buf[SERIAL_BUFSIZE];
-
-	/* Send synchronize request */
-	if (isp_serial_write(SYNCHRO_START, strlen(SYNCHRO_START)) != strlen(SYNCHRO_START)) {
-		printf("Unable to send synchronize request.\n");
-		return -5;
-	}
-
-	/* Wait for answer */
-	if (isp_serial_read(buf, SERIAL_BUFSIZE, strlen(SYNCHRO)) < 0) {
-		printf("Error reading synchronize answer.\n");
-		return -4;
-	}
-
-	/* Check answer, and acknoledge if OK */
-	if (strncmp(SYNCHRO, buf, strlen(SYNCHRO)) == 0) {
-		isp_serial_write(SYNCHRO, strlen(SYNCHRO));
-	} else {
-		printf("Unable to synchronize.\n");
-		return -1;
-	}
-
-	/* Empty read buffer (maybe echo is on ?) */
-	usleep( 5000 );
-	isp_serial_read(buf, SERIAL_BUFSIZE, 0);
-
-	/* FIXME : Do we always turn off echo ? */
-	/* and turn off echo */
-	isp_serial_write("A 0\r\n", 5);
-
-	return 1;
-}
 
 
 int main(int argc, char** argv)
@@ -233,6 +180,19 @@ int main(int argc, char** argv)
 	}
 
 	/* FIXME : call command handler */
+	if (command != NULL) {
+		int err = 0;
+		err = isp_handle_command(command, nb_cmd_args, cmd_args);
+		if (err >= 0) {
+			if (trace_on) {
+				printf("Command \"%s\" handled OK.\n", command);
+			}
+		} else {
+			printf("Error handling command \"%s\" : %d\n", command, err);
+		}
+	} else {
+		printf("No command given. use -h or --help for help on available commands.\n");
+	}
 
 
 	if (cmd_args != NULL) {
