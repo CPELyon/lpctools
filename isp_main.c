@@ -41,7 +41,7 @@ void help(char *prog_name)
 		"  Default baudrate is B115200\n" \
 		"  <device> is the (host) serial line used to programm the device\n" \
 		"  <command> is one of:\n" \
-		"  \t synchronize \n" \
+		"  \t synchronize (sync done each time unless -n is used (for multiple successive calls))\n" \
 		"  \t unlock \n" \
 		"  \t set-baud-rate \n" \
 		"  \t echo \n" \
@@ -57,7 +57,7 @@ void help(char *prog_name)
 		"  \t compare \n" \
 		"  \t read-uid \n" \
 		"  Available options:\n" \
-		"  \t -s | --synchronize : Perform synchronization before sending command\n" \
+		"  \t -n | --no-synchronize : Do not perform synchronization before sending command\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (does not issue the set-baud-rate command)\n" \
 		"  \t -t | --trace : turn on trace output of serial communication\n" \
 		"  \t -h | --help : display this help\n" \
@@ -175,29 +175,40 @@ int serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 	return count;
 }
 
-/* Connect or reconnect to the target */
-/* Return 1 when connection is OK, 0 otherwise */
+/* Connect or reconnect to the target.
+ * Return positive value when connection is OK, or negative value otherwise.
+ */
 int connect()
 {
 	char buf[SERIAL_BUFSIZE];
 
 	/* Send synchronize request */
-	serial_write(SYNCHRO_START, 1);
+	if (serial_write(SYNCHRO_START, strlen(SYNCHRO_START)) != strlen(SYNCHRO_START)) {
+		printf("Unable to send synchronize request.\n");
+		return -5;
+	}
 
 	/* Wait for answer */
-	serial_read(buf, SERIAL_BUFSIZE, strlen(SYNCHRO));
+	if (serial_read(buf, SERIAL_BUFSIZE, strlen(SYNCHRO)) < 0) {
+		printf("Error reading synchronize answer.\n");
+		return -4;
+	}
 
 	/* Check answer, and acknoledge if OK */
 	if (strncmp(SYNCHRO, buf, strlen(SYNCHRO)) == 0) {
 		serial_write(SYNCHRO, strlen(SYNCHRO));
 	} else {
 		printf("Unable to synchronize.\n");
-		return 0;
+		return -1;
 	}
-	/* Empty read buffer (echo on ?) */
-	serial_read(buf, SERIAL_BUFSIZE, 1);
+
+	/* Empty read buffer (maybe echo is on ?) */
+	usleep( 5000 );
+	serial_read(buf, SERIAL_BUFSIZE, 0);
+
+	/* FIXME : Do we always turn off echo ? */
 	/* and turn off echo */
-	serial_write("A 0\r\n", 1);
+	serial_write("A 0\r\n", 5);
 
 	return 1;
 }
@@ -206,7 +217,7 @@ int connect()
 int main(int argc, char** argv)
 {
 	int baudrate = SERIAL_BAUD;
-	int synchronize = 0;
+	int dont_synchronize = 0;
 	char* serial_device = NULL;
 
 	/* For "command" handling */
@@ -221,7 +232,7 @@ int main(int argc, char** argv)
 		int c = 0;
 
 		struct option long_options[] = {
-			{"synchronize", no_argument, 0, 's'},
+			{"no-synchronize", no_argument, 0, 'n'},
 			{"baudrate", required_argument, 0, 'b'},
 			{"trace", no_argument, 0, 't'},
 			{"help", no_argument, 0, 'h'},
@@ -229,7 +240,7 @@ int main(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "sb:thv", long_options, &option_index);
+		c = getopt_long(argc, argv, "nb:thv", long_options, &option_index);
 
 		/* no more options to parse */
 		if (c == -1) break;
@@ -247,8 +258,8 @@ int main(int argc, char** argv)
 				break;
 
 			/* s, synchronize */
-			case 's':
-				synchronize = 1;
+			case 'n':
+				dont_synchronize = 1;
 				break;
 
 			/* v, version */
@@ -267,29 +278,13 @@ int main(int argc, char** argv)
 
 	/* Parse remaining command line arguments (not options). */
 
-	/* First one should be serial device */
+	/* First one should (must) be serial device */
 	if (optind < argc) {
 		serial_device = argv[optind++];
 		if (trace_on) {
 			printf("Serial device : %s\n", serial_device);
 		}
 	}
-	/* Next one should be "command" */
-	if (optind < argc) {
-		command = argv[optind++];
-		if (trace_on) {
-			printf("Command : %s\n", command);
-		}
-	}
-	/* And then remaining ones (if any) are command arguments */
-	if (optind < argc) {
-		nb_cmd_args = argc - optind;
-		cmd_args = malloc(nb_cmd_args * sizeof(char *));
-		while (optind < argc) {
-			printf ("%s\n", argv[optind++]);
-		}
-	}
-
 	if (serial_device == NULL) {
 		printf("No serial device given, exiting\n");
 		help(argv[0]);
@@ -300,8 +295,30 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	/* FIXME : do not sync if command is sync */
-	if (synchronize) {
+	/* Next one should be "command" (if present) */
+	if (optind < argc) {
+		command = argv[optind++];
+		if (trace_on) {
+			printf("Command : %s\n", command);
+		}
+	}
+	/* And then remaining ones (if any) are command arguments */
+	if (optind < argc) {
+		nb_cmd_args = argc - optind;
+		cmd_args = malloc(nb_cmd_args * sizeof(char *));
+		if (trace_on) {
+			printf("Command arguments :\n");
+		}
+		while (optind < argc) {
+			static unsigned int idx = 0;
+			cmd_args[idx++] = argv[optind++];
+			if (trace_on) {
+				printf("%s\n", cmd_args[idx - 1]);
+			}
+		}
+	}
+
+	if (! dont_synchronize) {
 		connect();
 	}
 
