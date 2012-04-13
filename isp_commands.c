@@ -32,6 +32,8 @@ struct isp_command {
 #define SYNCHRO_ECHO_OFF "A 0\r\n"
 
 #define ISP_ABORT ""
+
+#define UNLOCK "U 23130\r\n"
 #define READ_UID "N\r\n"
 #define READ_PART_ID "J\r\n"
 #define READ_BOOT_VERSION "K\r\n"
@@ -64,13 +66,11 @@ int isp_ret_code(char* buf, char** endptr)
 {
 	unsigned int ret = 0;
 	ret = strtoul(buf, endptr, 10);
-	if (trace_on) {
-		/* FIXME : Find how return code are sent (binary or ASCII) */
-		if (ret > (sizeof(error_codes)/sizeof(char*))) {
-			printf("Received unknown error code '%u' !\n", ret);
-		} else {
-			printf("Received error code '%u': %s\n", ret, error_codes[ret]);
-		}
+	/* FIXME : Find how return code are sent (binary or ASCII) */
+	if (ret > (sizeof(error_codes)/sizeof(char*))) {
+		printf("Received unknown error code '%u' !\n", ret);
+	} else if ((ret != 0) || trace_on) {
+		printf("Received error code '%u': %s\n", ret, error_codes[ret]);
 	}
 	return ret;
 }
@@ -130,9 +130,37 @@ int isp_connect(unsigned int crystal_freq)
 	/* Read eror code for command */
 	isp_serial_read(buf, SERIAL_BUFSIZE, 3);
 
+	printf("Device session openned.\n");
+
 	return 1;
 }
 
+int isp_cmd_unlock(int arg_count, char** args)
+{
+	char buf[SERIAL_BUFSIZE];
+	int ret = 0, len = 0;
+	
+	/* Send read-uid request */
+	if (isp_serial_write(UNLOCK, strlen(UNLOCK)) != strlen(UNLOCK)) {
+		printf("Unable to send unlock request.\n");
+		return -5;
+	}
+	/* Wait for answer */
+	usleep( 5000 );
+	len = isp_serial_read(buf, SERIAL_BUFSIZE, 1);
+	if (len <= 0) {
+		printf("Error reading unlock acknowledge.\n");
+		return -4;
+	}
+	ret = isp_ret_code(buf, NULL);
+	if (ret != 0) {
+		printf("Unlock error.\n");
+		return -1;
+	}
+	printf("Device memory protection unlocked.\n");
+
+	return 0;
+}
 
 int isp_cmd_read_uid(int arg_count, char** args)
 {
@@ -243,7 +271,7 @@ int isp_cmd_null(int arg_count, char** args)
 }
 
 static struct isp_command isp_cmds_list[] = {
-	{"unlock", 0, isp_cmd_null}, /* isp_cmd_unlock} */
+	{"unlock", 0, isp_cmd_unlock},
 	{"write-to-ram", 0, isp_cmd_null}, /* isp_cmd_write-to-ram} */
 	{"read-memory", 0, isp_cmd_null}, /* isp_cmd_read-memory} */
 	{"prepare-for-write", 0, isp_cmd_null}, /* isp_cmd_prepare-for-write} */
