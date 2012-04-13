@@ -60,6 +60,9 @@ void isp_dump(const unsigned char* buf, unsigned int buf_size)
 			if (pass == 0) {
 				count -= 0x10;
 			} else {
+				if (count == buf_size) {
+					break; /* prevent infinite loop */
+				}
 				printf("|\n");
 			}
 			pass = !pass;

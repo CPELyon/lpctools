@@ -14,7 +14,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <string.h> /* strncmp */
 #include <errno.h>
 #include <getopt.h>
 
@@ -38,14 +37,12 @@
 void help(char *prog_name)
 {
 	fprintf(stderr, "-----------------------------------------------------------------------\n");
-	fprintf(stderr, "Usage: %s [options] device command [command arguments]\n" \
+	fprintf(stderr, "Usage: %s [options] device [-s | --synchronize]\n" \
+		"       %s [options] device command [command arguments]\n" \
 		"  Default baudrate is B115200\n" \
 		"  <device> is the (host) serial line used to programm the device\n" \
 		"  <command> is one of:\n" \
-		"  \t synchronize (sync done each time unless -n is used (for multiple successive calls))\n" \
 		"  \t unlock \n" \
-		"  \t set-baud-rate \n" \
-		"  \t echo \n" \
 		"  \t write-to-ram \n" \
 		"  \t read-memory \n" \
 		"  \t prepare-for-write \n" \
@@ -57,12 +54,21 @@ void help(char *prog_name)
 		"  \t read-boot-version \n" \
 		"  \t compare \n" \
 		"  \t read-uid \n" \
+		"  Notes:\n" \
+		"   - Access to the ISP mode is done by calling this utility once with the synchronize\n" \
+		"     option and no command. This starts a session. No command can be used before starting\n" \
+		"     a session, and no other synchronize request must be done once the session is started\n" \
+		"     unless the target is reseted, which closes the session.\n" \
+		"   - Echo is turned OFF when starting a session and the command is not available.\n" \
+		"   - The set-baud-rate command is not available. The SAME baudrate MUST be used for the\n" \
+		"     whole session. It must be specified on each successive call if the default baudrate\n" \
+		"     is not used.\n" \
 		"  Available options:\n" \
-		"  \t -n | --no-synchronize : Do not perform synchronization before sending command\n" \
+		"  \t -s | --synchronize : Perform synchronization (open session)\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (does not issue the set-baud-rate command)\n" \
 		"  \t -t | --trace : turn on trace output of serial communication\n" \
 		"  \t -h | --help : display this help\n" \
-		"  \t -v | --version : display version information\n", prog_name);
+		"  \t -v | --version : display version information\n", prog_name, prog_name);
 	fprintf(stderr, "-----------------------------------------------------------------------\n");
 }
 
@@ -74,7 +80,8 @@ int trace_on = 0;
 int main(int argc, char** argv)
 {
 	int baudrate = SERIAL_BAUD;
-	int dont_synchronize = 0;
+	int crystal_freq = 10000;
+	int synchronize = 0;
 	char* isp_serial_device = NULL;
 
 	/* For "command" handling */
@@ -89,7 +96,7 @@ int main(int argc, char** argv)
 		int c = 0;
 
 		struct option long_options[] = {
-			{"no-synchronize", no_argument, 0, 'n'},
+			{"synchronize", no_argument, 0, 's'},
 			{"baudrate", required_argument, 0, 'b'},
 			{"trace", no_argument, 0, 't'},
 			{"help", no_argument, 0, 'h'},
@@ -97,7 +104,7 @@ int main(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "nb:thv", long_options, &option_index);
+		c = getopt_long(argc, argv, "sb:thv", long_options, &option_index);
 
 		/* no more options to parse */
 		if (c == -1) break;
@@ -115,8 +122,8 @@ int main(int argc, char** argv)
 				break;
 
 			/* s, synchronize */
-			case 'n':
-				dont_synchronize = 1;
+			case 's':
+				synchronize = 1;
 				break;
 
 			/* v, version */
@@ -152,12 +159,28 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	if (synchronize) {
+		if (optind < argc) {
+			/* no command can be specified when opening a session */
+			printf("No command can be specified with -s or --synchronize (Session opening)\n");
+			printf("NOT SYNCHRONIZED !\n");
+			return -1;
+		}
+		isp_connect(crystal_freq);
+		isp_serial_close();
+		return 0;
+	}
+
 	/* Next one should be "command" (if present) */
 	if (optind < argc) {
 		command = argv[optind++];
 		if (trace_on) {
 			printf("Command : %s\n", command);
 		}
+	} else {
+		printf("No command given. use -h or --help for help on available commands.\n");
+		isp_serial_close();
+		return -1;
 	}
 	/* And then remaining ones (if any) are command arguments */
 	if (optind < argc) {
@@ -175,12 +198,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (! dont_synchronize) {
-		isp_connect();
-	}
-
-	/* FIXME : call command handler */
-	if (command != NULL) {
+	if (command != NULL)  {
 		int err = 0;
 		err = isp_handle_command(command, nb_cmd_args, cmd_args);
 		if (err >= 0) {
@@ -190,8 +208,6 @@ int main(int argc, char** argv)
 		} else {
 			printf("Error handling command \"%s\" : %d\n", command, err);
 		}
-	} else {
-		printf("No command given. use -h or --help for help on available commands.\n");
 	}
 
 

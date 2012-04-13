@@ -30,7 +30,7 @@ int isp_ret_code(char* buf);
 /* Connect or reconnect to the target.
  * Return positive or NULL value when connection is OK, or negative value otherwise.
  */
-int isp_connect();
+int isp_connect(unsigned int crystal_freq);
 
 /* Handle one command
  * Return positive or NULL value when command handling is OK, or negative value otherwise.
