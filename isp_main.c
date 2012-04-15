@@ -50,7 +50,7 @@ void help(char *prog_name)
 		"  <command> is one of:\n" \
 		"  \t unlock \n" \
 		"  \t write-to-ram \n" \
-		"  \t read-memory \n" \
+		"  \t read-memory address count file : read 'count' byte(s) from 'address', store then in 'file'\n" \
 		"  \t prepare-for-write \n" \
 		"  \t copy-ram-to-flash \n" \
 		"  \t go \n" \
