@@ -30,6 +30,9 @@ void isp_dump(const unsigned char* buf, unsigned int buf_size)
 {
 	unsigned int count = 0;
 	char pass = 0;
+	if (buf_size == 0) {
+		return;
+	}
 	while ((count < buf_size) || (pass == 0)) {
 		if (count == buf_size) {
 			while (count & 0x0F) {
