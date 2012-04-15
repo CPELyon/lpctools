@@ -53,27 +53,46 @@ struct isp_command {
 #define READ_BOOT_VERSION "K\r\n"
 
 
-
 char* error_codes[] = {
+#define CMD_SUCCESS 0
 	"CMD_SUCCESS",
+#define INVALID_COMMAND 1
 	"INVALID_COMMAND",
+#define SRC_ADDR_ERROR 2
 	"SRC_ADDR_ERROR",
+#define DST_ADDR_ERROR 3
 	"DST_ADDR_ERROR",
+#define SRC_ADDR_NOT_MAPPED 4
 	"SRC_ADDR_NOT_MAPPED",
+#define DST_ADDR_NOT_MAPPED 5
 	"DST_ADDR_NOT_MAPPED",
+#define COUNT_ERROR 6
 	"COUNT_ERROR",
+#define INVALID_SECTOR 7
 	"INVALID_SECTOR",
+#define SECTOR_NOT_BLANK 8
 	"SECTOR_NOT_BLANK",
+#define SECTOR_NOT_PREPARED_FOR_WRITE_OPERATION 9
 	"SECTOR_NOT_PREPARED_FOR_WRITE_OPERATION",
+#define COMPARE_ERROR 10
 	"COMPARE_ERROR",
+#define BUSY 11
 	"BUSY",
+#define PARAM_ERROR 12
 	"PARAM_ERROR",
+#define ADDR_ERROR 13
 	"ADDR_ERROR",
+#define ADDR_NOT_MAPPED 14
 	"ADDR_NOT_MAPPED",
+#define CMD_LOCKED 15
 	"CMD_LOCKED",
+#define INVALID_CODE 16
 	"INVALID_CODE",
+#define INVALID_BAUD_RATE 17
 	"INVALID_BAUD_RATE",
+#define INVALID_STOP_BIT 18
 	"INVALID_STOP_BIT",
+#define CODE_READ_PROTECTION_ENABLED 19
 	"CODE_READ_PROTECTION_ENABLED",
 };
 
@@ -469,6 +488,69 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	return ret;
 }
 
+int isp_cmd_blank_check(int arg_count, char** args)
+{
+	char buf[SERIAL_BUFSIZE];
+	int ret = 0, len = 0;
+	char* tmp = NULL;
+	/* Arguments */
+	unsigned long int first_sector = 0, last_sector = 0;
+	/* Reply */
+	unsigned long int offset = 0, content = 0;
+
+	/* Check blank-check arguments */
+	if (arg_count != 2) {
+		printf("blank-check command needs first and last sectors (1 sector = 4KB of flash).\n");
+		return -7;
+	}
+	first_sector = strtoul(args[0], NULL, 0);
+	last_sector = strtoul(args[1], NULL, 0);
+	if (trace_on) {
+		printf("blank-check command called for sectors %lu to %lu.\n", first_sector, last_sector);
+	}
+	if (last_sector < first_sector) {
+		printf("Last sector must be after (or equal to) first sector for blank-check command.\n");
+		return -6;
+	}
+
+	/* Create blank-check request */
+	len = snprintf(buf, SERIAL_BUFSIZE, "I %lu %lu\r\n", first_sector, last_sector);
+	if (len > SERIAL_BUFSIZE) {
+		len = SERIAL_BUFSIZE;
+	}
+
+	/* Send blank-check request */
+	if (isp_serial_write(buf, len) != len) {
+		printf("Unable to send blank-check request.\n");
+		return -5;
+	}
+	/* Wait for answer */
+	usleep( 5000 );
+	len = isp_serial_read(buf, SERIAL_BUFSIZE, 3);
+	if (len <= 0) {
+		printf("Error reading blank-check result.\n");
+		return -4;
+	}
+	ret = isp_ret_code(buf, &tmp);
+	switch (ret) {
+		case CMD_SUCCESS:
+			printf("Specified sector(s) all blank(s).\n");
+			break;
+		case SECTOR_NOT_BLANK:
+			offset = strtoul(tmp, &tmp, 10);
+			content = strtoul(tmp, NULL, 10);
+			printf("First non blank word is at offset 0x%08lx and contains 0x%08lx\n", offset, content);
+			break;
+		case INVALID_SECTOR :
+			printf("Invalid sector for blank-check command.\n");
+			return -1;
+		case PARAM_ERROR:
+			printf("Param error for blank-check command.\n");
+			return -1;
+	}
+
+	return 0;
+}
 
 /* FIXME : Temporary place-holder */
 int isp_cmd_null(int arg_count, char** args)
@@ -489,7 +571,7 @@ static struct isp_command isp_cmds_list[] = {
 	{"copy-ram-to-flash", 0, isp_cmd_null}, /* isp_cmd_copy-ram-to-flash} */
 	{"go", 0, isp_cmd_null}, /* isp_cmd_go} */
 	{"erase", 0, isp_cmd_null}, /* isp_cmd_erase} */
-	{"blank-check", 0, isp_cmd_null}, /* isp_cmd_blank-check} */
+	{"blank-check", 2, isp_cmd_blank_check},
 	{"read-part-id", 0, isp_cmd_part_id},
 	{"read-boot-version", 0, isp_cmd_boot_version},
 	{"compare", 0, isp_cmd_null}, /* isp_cmd_compare} */

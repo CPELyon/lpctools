@@ -55,7 +55,7 @@ void help(char *prog_name)
 		"  \t copy-ram-to-flash \n" \
 		"  \t go \n" \
 		"  \t erase \n" \
-		"  \t blank-check \n" \
+		"  \t blank-check first last : check flash starting from 'first' setcor to 'last' sector is blank\n" \
 		"  \t read-part-id \n" \
 		"  \t read-boot-version \n" \
 		"  \t compare \n" \
