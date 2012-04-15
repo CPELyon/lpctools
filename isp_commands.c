@@ -532,7 +532,7 @@ int isp_handle_command(char* cmd, int arg_count, char** args)
 	if (arg_count != isp_cmds_list[cmd_found].nb_args) {
 		isp_warn_trailing_args(cmd_found, arg_count, args);
 	}
-	isp_cmds_list[cmd_found].handler(arg_count, args);
+	ret = isp_cmds_list[cmd_found].handler(arg_count, args);
 	
 	if (cmd_found == -1) {
 		printf("Unknown command \"%s\", use -h or --help for a list.\n", cmd);
