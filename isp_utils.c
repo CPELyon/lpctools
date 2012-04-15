@@ -19,12 +19,12 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include <string.h>
-
-#include <termios.h>
-#include <ctype.h>
 #include <errno.h>
+
+#include <string.h> /* memcpy */
+
+#include <termios.h> /* serial */
+#include <ctype.h>
 
 
 extern int trace_on;
@@ -183,7 +183,9 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 
 /* ---- UU_Encoding utility functions ----------------------------------------------*/
 
-/* FIXME : This is a place-holder forr uuencode and uudecode functions !!! */
+/* This might have been taken from a lib, but I hate lib dependencies, and installing
+ *  a full window manager (or MTA or MUA for instance) for two functions is not an 
+ *  option */
 int isp_uu_encode(char* dest, char* src, unsigned int orig_size)
 {
 	int new_size = 0;
@@ -198,15 +200,54 @@ int isp_uu_encode(char* dest, char* src, unsigned int orig_size)
 	return new_size;
 }
 
+#define UUENCODE_ADDED_VAL 32
+#define LINE_LENGTH_NULL 96
 int isp_uu_decode(char* dest, char* src, unsigned int orig_size)
 {
-	int new_size = 0;
-	while (orig_size--) {
-		if (*src) {
-			*dest++ = *src++;
-		} else {
+	unsigned int new_size = 0;
+	unsigned int pos = 0;
+
+	while (pos < orig_size) {
+		unsigned int line_length = 0;
+		unsigned int i = 0;
+		int j = 0;
+
+		/* Read line length */
+		line_length = src[pos] - UUENCODE_ADDED_VAL;
+		if (src[pos] == LINE_LENGTH_NULL) {
+			/* Empty line ? then we are done converting
+			 * (should not happen in communication with ISP) */
+			return new_size;
 		}
-		new_size++;
+		pos++;
+
+		/* Decode line */
+		while (i < line_length) {
+			char quartet[4];
+			uint32_t int_triplet = 0;
+			/* copy data */
+			memcpy(quartet, &src[pos], 4);
+			pos += 4;
+			/* Get the original bits */
+			for (j=0; j<4; j++) {
+				/* Remove the offset added by uuencoding */
+				quartet[j] -= UUENCODE_ADDED_VAL;
+				int_triplet |= ((quartet[j] & 0x3F) << ((3 - j) * 6));
+			}
+			/* And store them */
+			for (j=2; j>=0; j--) {
+				dest[new_size++] = ((int_triplet >> (j * 8)) & 0xFF );
+				i++;
+				if (i >= line_length) {
+					break;
+				}
+			}
+		}
+		
+		/* Find next line */
+		while ((src[pos] < UUENCODE_ADDED_VAL) && (pos < orig_size))   {
+			pos++;
+		}
 	}
 	return new_size;
 }
