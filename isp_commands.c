@@ -488,62 +488,207 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	return ret;
 }
 
-int isp_cmd_blank_check(int arg_count, char** args)
+
+int isp_cmd_compare(int arg_count, char** args)
 {
 	char buf[SERIAL_BUFSIZE];
 	int ret = 0, len = 0;
 	char* tmp = NULL;
 	/* Arguments */
-	unsigned long int first_sector = 0, last_sector = 0;
+	unsigned long int addr1 = 0, addr2 = 0;
+	unsigned long int cmp_length = 0;
 	/* Reply */
-	unsigned long int offset = 0, content = 0;
+	unsigned long int offset = 0;
 
-	/* Check blank-check arguments */
-	if (arg_count != 2) {
-		printf("blank-check command needs first and last sectors (1 sector = 4KB of flash).\n");
+	/* Check compare arguments */
+	if (arg_count != 3) {
+		printf("compare command needs two addresses and byte count.\n");
 		return -7;
 	}
-	first_sector = strtoul(args[0], NULL, 0);
-	last_sector = strtoul(args[1], NULL, 0);
+	addr1 = strtoul(args[0], NULL, 0);
+	addr2 = strtoul(args[1], NULL, 0);
+	cmp_length = strtoul(args[2], NULL, 0);
 	if (trace_on) {
-		printf("blank-check command called for sectors %lu to %lu.\n", first_sector, last_sector);
+		printf("compare command called for %lu bytes between addresses %lu and %lu.\n",
+				cmp_length, addr1, addr2);
 	}
-	if (last_sector < first_sector) {
-		printf("Last sector must be after (or equal to) first sector for blank-check command.\n");
+	if ((addr1 & 0x03) || (addr2 & 0x03) || (cmp_length & 0x03)) {
+		printf("Error: addresses and count must be multiples of 4 for compare command.\n");
 		return -6;
 	}
 
-	/* Create blank-check request */
-	len = snprintf(buf, SERIAL_BUFSIZE, "I %lu %lu\r\n", first_sector, last_sector);
+	/* Create compare request */
+	len = snprintf(buf, SERIAL_BUFSIZE, "M %lu %lu %lu\r\n", addr1, addr2, cmp_length);
 	if (len > SERIAL_BUFSIZE) {
 		len = SERIAL_BUFSIZE;
 	}
 
-	/* Send blank-check request */
+	/* Send compare request */
 	if (isp_serial_write(buf, len) != len) {
-		printf("Unable to send blank-check request.\n");
+		printf("Unable to send compare request.\n");
 		return -5;
 	}
 	/* Wait for answer */
 	usleep( 5000 );
 	len = isp_serial_read(buf, SERIAL_BUFSIZE, 3);
 	if (len <= 0) {
-		printf("Error reading blank-check result.\n");
+		printf("Error reading compare result.\n");
 		return -4;
 	}
 	ret = isp_ret_code(buf, &tmp);
 	switch (ret) {
 		case CMD_SUCCESS:
+			printf("Source and destination data are equal.\n");
+			break;
+		case COMPARE_ERROR:
+			/* possibly read remaining data */
+			usleep( 2000 );
+			len += isp_serial_read((buf + len), (SERIAL_BUFSIZE - len), 0);
+			offset = strtoul(tmp, &tmp, 10);
+			printf("First mismatch occured at offset 0x%08lx\n", offset);
+			break;
+		default :
+			printf("Error for compare command.\n");
+			return -1;
+	}
+
+	return 0;
+}
+
+
+int isp_cmd_go(int arg_count, char** args)
+{
+	char buf[SERIAL_BUFSIZE];
+	int ret = 0, len = 0;
+	/* Arguments */
+	unsigned long int addr = 0;
+	char* mode = NULL;
+
+	/* Check go arguments */
+	if (arg_count != 2) {
+		printf("go command needs address (> 0x200) and mode ('thumb' or 'arm').\n");
+		return -7;
+	}
+	addr = strtoul(args[0], NULL, 0);
+	mode = args[1];
+	if (trace_on) {
+		printf("go command called with address 0x%08lx and mode %s.\n", addr, mode);
+	}
+	if (addr < 0x200) {
+		printf("Error: address must be 0x00000200 or greater for go command.\n");
+		return -6;
+	}
+	if (strncmp(mode, "thumb", strlen(mode)) == 0) {
+		mode[0] = 'T';
+	} else if (strncmp(mode, "arm", strlen(mode)) == 0) {
+		mode[0] = 'A';
+	} else {
+		printf("Error: mode must be 'thumb' or 'arm' for go command.\n");
+		return -5;
+	}
+
+	/* Create go request */
+	len = snprintf(buf, SERIAL_BUFSIZE, "G %lu %c\r\n", addr, mode[0]);
+	if (len > SERIAL_BUFSIZE) {
+		len = SERIAL_BUFSIZE;
+	}
+
+	/* Send go request */
+	if (isp_serial_write(buf, len) != len) {
+		printf("Unable to send go request.\n");
+		return -4;
+	}
+	/* Wait for answer */
+	usleep( 5000 );
+	len = isp_serial_read(buf, SERIAL_BUFSIZE, 3);
+	if (len <= 0) {
+		printf("Error reading go result.\n");
+		return -3;
+	}
+	ret = isp_ret_code(buf, NULL);
+	if (ret != 0) {
+		printf("Error when trying to execute programm at 0x%08lx in %s mode.\n", addr, mode);
+		return -1;
+	}
+
+	return 0;
+}
+
+int isp_cmd_sectors_skel(int arg_count, char** args, char* name, char cmd)
+{
+	char buf[SERIAL_BUFSIZE];
+	int ret = 0, len = 0;
+	/* Arguments */
+	unsigned long int first_sector = 0, last_sector = 0;
+
+	/* Check arguments */
+	if (arg_count != 2) {
+		printf("%s command needs first and last sectors (1 sector = 4KB of flash).\n", name);
+		return -7;
+	}
+	first_sector = strtoul(args[0], NULL, 0);
+	last_sector = strtoul(args[1], NULL, 0);
+	if (trace_on) {
+		printf("%s command called for sectors %lu to %lu.\n", name, first_sector, last_sector);
+	}
+	if (last_sector < first_sector) {
+		printf("Last sector must be after (or equal to) first sector for %s command.\n", name);
+		return -6;
+	}
+
+	/* Create request */
+	len = snprintf(buf, SERIAL_BUFSIZE, "%c %lu %lu\r\n", cmd, first_sector, last_sector);
+	if (len > SERIAL_BUFSIZE) {
+		len = SERIAL_BUFSIZE;
+	}
+	/* Send request */
+	if (isp_serial_write(buf, len) != len) {
+		printf("Unable to send %s request.\n", name);
+		return -5;
+	}
+	/* Wait for answer */
+	usleep( 5000 );
+	len = isp_serial_read(buf, 3, 3); /* Read at exactly 3 bytes, so caller can retreive info */
+	if (len <= 0) {
+		printf("Error reading %s result.\n", name);
+		return -4;
+	}
+	ret = isp_ret_code(buf, NULL);
+
+	return ret;
+}
+
+int isp_cmd_blank_check(int arg_count, char** args)
+{
+	char* tmp = NULL;
+	unsigned long int offset = 0, content = 0;
+	char buf[SERIAL_BUFSIZE];
+	int ret = 0, len = 0;
+
+	ret = isp_cmd_sectors_skel(arg_count, args, "blank-check", 'I');
+	if (ret < 0) {
+		return ret;
+	}
+
+	switch (ret) {
+		case CMD_SUCCESS:
 			printf("Specified sector(s) all blank(s).\n");
 			break;
 		case SECTOR_NOT_BLANK:
-			offset = strtoul(tmp, &tmp, 10);
+			/* read remaining data */
+			usleep( 2000 );
+			len = isp_serial_read(buf, SERIAL_BUFSIZE, 3);
+			if (len <= 0) {
+				printf("Error reading blank-check result.\n");
+				return -3;
+			}
+			offset = strtoul(buf, &tmp, 10);
 			content = strtoul(tmp, NULL, 10);
 			printf("First non blank word is at offset 0x%08lx and contains 0x%08lx\n", offset, content);
 			break;
 		case INVALID_SECTOR :
 			printf("Invalid sector for blank-check command.\n");
-			return -1;
+			return -2;
 		case PARAM_ERROR:
 			printf("Param error for blank-check command.\n");
 			return -1;
@@ -551,6 +696,34 @@ int isp_cmd_blank_check(int arg_count, char** args)
 
 	return 0;
 }
+
+int isp_cmd_prepare_for_write(int arg_count, char** args)
+{
+	int ret = isp_cmd_sectors_skel(arg_count, args, "prepare-for-write", 'P');
+
+	if (ret != 0) {
+		printf("Error when trying to prepare sectors for write operation.\n");
+		return -1;
+	}
+	printf("Sectors prepared for write operation.\n");
+
+	return 0;
+}
+
+int isp_cmd_erase(int arg_count, char** args)
+{
+	int ret = isp_cmd_sectors_skel(arg_count, args, "erase", 'E');
+	
+	if (ret != 0) {
+		printf("Error when trying to erase sectors.\n");
+		return -1;
+	}
+	printf("Sectors erased.\n");
+
+	return 0;
+}
+
+
 
 /* FIXME : Temporary place-holder */
 int isp_cmd_null(int arg_count, char** args)
@@ -567,14 +740,14 @@ static struct isp_command isp_cmds_list[] = {
 	{"unlock", 0, isp_cmd_unlock},
 	{"write-to-ram", 0, isp_cmd_null}, /* isp_cmd_write-to-ram} */
 	{"read-memory", 3, isp_cmd_read_memory},
-	{"prepare-for-write", 0, isp_cmd_null}, /* isp_cmd_prepare-for-write} */
+	{"prepare-for-write", 2, isp_cmd_prepare_for_write},
 	{"copy-ram-to-flash", 0, isp_cmd_null}, /* isp_cmd_copy-ram-to-flash} */
-	{"go", 0, isp_cmd_null}, /* isp_cmd_go} */
-	{"erase", 0, isp_cmd_null}, /* isp_cmd_erase} */
+	{"go", 2, isp_cmd_go},
+	{"erase", 2, isp_cmd_erase},
 	{"blank-check", 2, isp_cmd_blank_check},
 	{"read-part-id", 0, isp_cmd_part_id},
 	{"read-boot-version", 0, isp_cmd_boot_version},
-	{"compare", 0, isp_cmd_null}, /* isp_cmd_compare} */
+	{"compare", 3, isp_cmd_compare},
 	{"read-uid", 0, isp_cmd_read_uid},
 	{NULL, 0, NULL}
 };

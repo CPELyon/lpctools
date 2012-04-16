@@ -51,14 +51,14 @@ void help(char *prog_name)
 		"  \t unlock \n" \
 		"  \t write-to-ram \n" \
 		"  \t read-memory address count file : read 'count' byte(s) from 'address', store then in 'file'\n" \
-		"  \t prepare-for-write \n" \
+		"  \t prepare-for-write first last : prepare sectors from 'first' to 'last' for write operation\n" \
 		"  \t copy-ram-to-flash \n" \
-		"  \t go \n" \
-		"  \t erase \n" \
-		"  \t blank-check first last : check flash starting from 'first' setcor to 'last' sector is blank\n" \
+		"  \t go address mode : execute programm at 'address' (> 0x200) in 'mode' ('arm' or 'thumb')\n" \
+		"  \t erase first last : erase flash starting from 'first' sector up to (including) 'last' sector \n" \
+		"  \t blank-check first last : check flash starting from 'first' sector to 'last' sector is blank\n" \
 		"  \t read-part-id \n" \
 		"  \t read-boot-version \n" \
-		"  \t compare \n" \
+		"  \t compare address1 address2 count : compare count bytes between address1 and address2\n" \
 		"  \t read-uid \n" \
 		"  Notes:\n" \
 		"   - Access to the ISP mode is done by calling this utility once with the synchronize\n" \
@@ -69,6 +69,8 @@ void help(char *prog_name)
 		"   - The set-baud-rate command is not available. The SAME baudrate MUST be used for the\n" \
 		"     whole session. It must be specified on each successive call if the default baudrate\n" \
 		"     is not used.\n" \
+		"   - User must issue an 'unlock' command before any of 'copy-ram-to-flash', 'erase',\n" \
+		"     and 'go' commands.\n" \
 		"  Available options:\n" \
 		"  \t -s | --synchronize : Perform synchronization (open session)\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (does not issue the set-baud-rate command)\n" \
