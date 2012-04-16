@@ -703,7 +703,7 @@ int isp_cmd_prepare_for_write(int arg_count, char** args)
 
 	if (ret != 0) {
 		printf("Error when trying to prepare sectors for write operation.\n");
-		return -1;
+		return ret;
 	}
 	printf("Sectors prepared for write operation.\n");
 
@@ -716,13 +716,12 @@ int isp_cmd_erase(int arg_count, char** args)
 	
 	if (ret != 0) {
 		printf("Error when trying to erase sectors.\n");
-		return -1;
+		return ret;
 	}
 	printf("Sectors erased.\n");
 
 	return 0;
 }
-
 
 
 /* FIXME : Temporary place-holder */
