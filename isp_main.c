@@ -52,7 +52,8 @@ void help(char *prog_name)
 		"  \t write-to-ram \n" \
 		"  \t read-memory address count file : read 'count' byte(s) from 'address', store then in 'file'\n" \
 		"  \t prepare-for-write first last : prepare sectors from 'first' to 'last' for write operation\n" \
-		"  \t copy-ram-to-flash \n" \
+		"  \t copy-ram-to-flash flash_addr ram_addr count : copy count bytes (256, 512, 1024 or 4096)\n" \
+		"  \t     from 'ram_addr' to 'flash_addr'\n" \
 		"  \t go address mode : execute programm at 'address' (> 0x200) in 'mode' ('arm' or 'thumb')\n" \
 		"  \t erase first last : erase flash starting from 'first' sector up to (including) 'last' sector \n" \
 		"  \t blank-check first last : check flash starting from 'first' sector to 'last' sector is blank\n" \

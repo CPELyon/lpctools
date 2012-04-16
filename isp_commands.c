@@ -488,63 +488,95 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	return ret;
 }
 
-
-int isp_cmd_compare(int arg_count, char** args)
+int isp_cmd_address_skel(int arg_count, char** args, char* name, char cmd)
 {
 	char buf[SERIAL_BUFSIZE];
 	int ret = 0, len = 0;
 	char* tmp = NULL;
 	/* Arguments */
 	unsigned long int addr1 = 0, addr2 = 0;
-	unsigned long int cmp_length = 0;
-	/* Reply */
-	unsigned long int offset = 0;
+	unsigned long int length = 0;
 
 	/* Check compare arguments */
 	if (arg_count != 3) {
-		printf("compare command needs two addresses and byte count.\n");
+		printf("%s command needs two addresses and byte count.\n", name);
 		return -7;
 	}
 	addr1 = strtoul(args[0], NULL, 0);
 	addr2 = strtoul(args[1], NULL, 0);
-	cmp_length = strtoul(args[2], NULL, 0);
+	length = strtoul(args[2], NULL, 0);
 	if (trace_on) {
-		printf("compare command called for %lu bytes between addresses %lu and %lu.\n",
-				cmp_length, addr1, addr2);
+		printf("%s command called for %lu bytes between addresses %lu and %lu.\n",
+				name, length, addr1, addr2);
 	}
-	if ((addr1 & 0x03) || (addr2 & 0x03) || (cmp_length & 0x03)) {
-		printf("Error: addresses and count must be multiples of 4 for compare command.\n");
-		return -6;
+	switch (cmd) {
+		case 'M':
+			if ((addr1 & 0x03) || (addr2 & 0x03) || (length & 0x03)) {
+				printf("Error: addresses and count must be multiples of 4 for %s command.\n", name);
+				return -7;
+			}
+			break;
+		case 'C':
+			if ((addr1 & 0x00FF) || (addr2 & 0x03)) {
+				printf("Error: flash address must be on 256 bytes boundary, ram address on 4 bytes boundary.\n");
+				return -8;
+			}
+			/* According to section 21.5.7 of LPC11xx user's manual (UM10398), number of bytes
+			 * written should be 256 | 512 | 1024 | 4096 */
+			len = ((length >> 8) & 0x01) + ((length >> 9) & 0x01);
+			len += ((length >> 10) & 0x01) + ((length >> 12) & 0x01);
+			if (len != 1) {
+				printf("Error: bytes count must be one of 256 | 512 | 1024 | 4096\n");
+				return -7;
+			}
+			break;
+		default:
+			printf("Error: unsupported command code: '%c'\n", cmd);
+			return -6;
 	}
 
 	/* Create compare request */
-	len = snprintf(buf, SERIAL_BUFSIZE, "M %lu %lu %lu\r\n", addr1, addr2, cmp_length);
+	len = snprintf(buf, SERIAL_BUFSIZE, "%c %lu %lu %lu\r\n", cmd, addr1, addr2, length);
 	if (len > SERIAL_BUFSIZE) {
 		len = SERIAL_BUFSIZE;
 	}
 
 	/* Send compare request */
 	if (isp_serial_write(buf, len) != len) {
-		printf("Unable to send compare request.\n");
+		printf("Unable to send %s request.\n", name);
 		return -5;
 	}
 	/* Wait for answer */
 	usleep( 5000 );
-	len = isp_serial_read(buf, SERIAL_BUFSIZE, 3);
+	len = isp_serial_read(buf, 3, 3);
 	if (len <= 0) {
-		printf("Error reading compare result.\n");
+		printf("Error reading %s result.\n", name);
 		return -4;
 	}
 	ret = isp_ret_code(buf, &tmp);
+	return ret;
+}
+
+int isp_cmd_compare(int arg_count, char** args)
+{
+	char buf[SERIAL_BUFSIZE];
+	int ret = 0, len = 0;
+	unsigned long int offset = 0;
+	
+	ret = isp_cmd_address_skel(arg_count, args, "compare", 'M');
 	switch (ret) {
 		case CMD_SUCCESS:
 			printf("Source and destination data are equal.\n");
 			break;
 		case COMPARE_ERROR:
-			/* possibly read remaining data */
+			/* read remaining data */
 			usleep( 2000 );
-			len += isp_serial_read((buf + len), (SERIAL_BUFSIZE - len), 0);
-			offset = strtoul(tmp, &tmp, 10);
+			len = isp_serial_read(buf, SERIAL_BUFSIZE, 3);
+			if (len <= 0) {
+				printf("Error reading blank-check result.\n");
+				return -3;
+			}
+			offset = strtoul(buf, NULL, 10);
 			printf("First mismatch occured at offset 0x%08lx\n", offset);
 			break;
 		default :
@@ -555,6 +587,20 @@ int isp_cmd_compare(int arg_count, char** args)
 	return 0;
 }
 
+int isp_cmd_copy_ram_to_flash(int arg_count, char** args)
+{
+	int ret = 0;
+
+	ret = isp_cmd_address_skel(arg_count, args, "copy-ram-to-flash", 'C');
+	
+	if (ret != 0) {
+		printf("Error when trying to copy data from ram to flash.\n");
+		return ret;
+	}
+	printf("Data copied from ram to flash.\n");
+
+	return 0;
+}
 
 int isp_cmd_go(int arg_count, char** args)
 {
@@ -740,7 +786,7 @@ static struct isp_command isp_cmds_list[] = {
 	{"write-to-ram", 0, isp_cmd_null}, /* isp_cmd_write-to-ram} */
 	{"read-memory", 3, isp_cmd_read_memory},
 	{"prepare-for-write", 2, isp_cmd_prepare_for_write},
-	{"copy-ram-to-flash", 0, isp_cmd_null}, /* isp_cmd_copy-ram-to-flash} */
+	{"copy-ram-to-flash", 3, isp_cmd_copy_ram_to_flash},
 	{"go", 2, isp_cmd_go},
 	{"erase", 2, isp_cmd_erase},
 	{"blank-check", 2, isp_cmd_blank_check},
