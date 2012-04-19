@@ -186,22 +186,57 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 /* This might have been taken from a lib, but I hate lib dependencies, and installing
  *  a full window manager (or MTA or MUA for instance) for two functions is not an 
  *  option */
+#define UUENCODE_ADDED_VAL 32
+#define LINE_DATA_LENGTH_MAX 45
+#define LINE_LENGTH_NULL 96
+
 int isp_uu_encode(char* dest, char* src, unsigned int orig_size)
 {
-	int new_size = 0;
+	unsigned int new_size = 0;
+	unsigned int pos = 0;
 
-	while (orig_size--) {
-		if (*src) {
-			*dest++ = *src++;
-			new_size++;
-		} else {
+	while (pos < orig_size) {
+		unsigned int line_length = orig_size - pos;
+		unsigned int i = 0;
+		
+		/* Start with line length */
+		if (line_length > LINE_DATA_LENGTH_MAX) {
+			line_length = LINE_DATA_LENGTH_MAX;
 		}
+		dest[new_size] = line_length + UUENCODE_ADDED_VAL;
+		new_size++;
+		
+		/* Encode line */
+		while (i < line_length) {
+			uint32_t int_triplet = 0;
+			int j = 0;
+			
+			/* Get original triplet (three bytes) */
+			for (j=0; j<3; j++) {
+				int_triplet |= ((src[pos + i + j] & 0xFF) << (8 * (2 - j)));
+				/* if not enougth data, leave it as nul */
+				if ((i + j) > line_length) {
+					break;
+				}
+			}
+			for (j=0; j<4; j++) {
+				/* Store triplet in four bytes */
+				dest[new_size + j] = ((int_triplet >> (6 * (3 - j))) & 0x3F);
+				/* Add offset */
+				dest[new_size + j] += UUENCODE_ADDED_VAL;
+			}
+			i += 3;
+			new_size += 4;
+		}
+		pos += line_length;
+
+		/* Add \r\n */
+		dest[new_size++] = '\r';
+		dest[new_size++] = '\n';
 	}
 	return new_size;
 }
 
-#define UUENCODE_ADDED_VAL 32
-#define LINE_LENGTH_NULL 96
 int isp_uu_decode(char* dest, char* src, unsigned int orig_size)
 {
 	unsigned int new_size = 0;
