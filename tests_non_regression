@@ -1,0 +1,107 @@
+./isp /dev/ttyUSB1 -t -s read-uid sdfsdf ldsfgk
+./isp /dev/ttyUSB1 -t -s read-uid sdfsdf ldsfgk -h
+./isp /dev/ttyUSB1 -t -s
+./isp /dev/ttyUSB1 -t read-uid sdfsdf ldsfg
+	UID: 0x0b0b134f - 0x53531b87 - 0x4d3ccb42 - 0xf5000000
+./isp /dev/ttyUSB1 -t echo
+./isp /dev/ttyUSB1 -t erase
+./isp /dev/ttyUSB1 -t read-part-id
+	Part ID is 0x2540102b
+./isp /dev/ttyUSB1 -t read-uid
+	UID: 0x0b0b134f - 0x53531b87 - 0x4d3ccb42 - 0xf5000000
+./isp /dev/ttyUSB1 -t read-boot-version
+	Boot code version is 1.7
+./isp /dev/ttyUSB1 read-boot-version
+./isp /dev/ttyUSB1 read-part-id
+./isp /dev/ttyUSB1 read-uid
+./isp /dev/ttyUSB1 -s
+./isp /dev/ttyUSB1 unlock
+./isp /dev/ttyUSB1 --synchronize
+./isp /dev/ttyUSB1 -t read-memory
+./isp /dev/ttyUSB1 -t read-memory 0x15 1548
+./isp /dev/ttyUSB1 -t read-memory 0x1000 4
+./isp /dev/ttyUSB1 -t read-memory 0x1000 40
+./isp /dev/ttyUSB1 -t read-memory 0x1000 900
+./isp /dev/ttyUSB1 -t read-memory 0x1000 150
+./isp /dev/ttyUSB1 -t read-memory 0x1000 160
+./isp /dev/ttyUSB1 -t read-memory 0x1000 4 -
+./isp /dev/ttyUSB1 -t read-memory 0x1000 800 -
+./isp /dev/ttyUSB1 read-memory 0x1000 800 -
+./isp /dev/ttyUSB1 -t read-memory 0x1000 800 dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 805 ../dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 804 ../dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 808 ../dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 1204 ../dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 900 ../dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 1840 ../dump01
+./isp /dev/ttyUSB1 -t read-memory 0x1000 4 ../dump01
+./isp /dev/ttyUSB1 read-memory 0x0000 1800 ../dump01
+./isp /dev/ttyUSB1 read-memory 0x0000 600 ../dump01
+./isp /dev/ttyUSB1 read-memory 0x0000 600 -
+./isp /dev/ttyUSB1 -t unlock
+./isp /dev/ttyUSB1 -t blank-check
+./isp /dev/ttyUSB1 -t blank-check 1 3
+./isp /dev/ttyUSB1 -t blank-check 0 3
+./isp /dev/ttyUSB1 -t blank-check 4 3
+./isp /dev/ttyUSB1 -t blank-check 4 4
+./isp /dev/ttyUSB1 -t blank-check 3 4
+./isp /dev/ttyUSB1 -t blank-check 4 6
+./isp /dev/ttyUSB1 read-memory 0x4000 12 -
+./isp /dev/ttyUSB1 -t blank-check 4 8
+./isp /dev/ttyUSB1 -t blank-check 4 7
+./isp /dev/ttyUSB1 blank-check 4 7
+./isp /dev/ttyUSB1 blank-check 1 1
+./isp /dev/ttyUSB1 read-memory 0x0000 0x4000 - > ../dump_full
+./isp /dev/ttyUSB1 -s
+./isp /dev/ttyUSB1 read-part-id
+./isp /dev/ttyUSB1 read-boot-version
+./isp /dev/ttyUSB1 compare 0x4000 0x5000 60
+./isp /dev/ttyUSB1 compare 0x4000 0x5000 65
+./isp /dev/ttyUSB1 compare 0x4000 0x5000 66
+./isp /dev/ttyUSB1 compare 0x4000 0x5000 68
+./isp /dev/ttyUSB1 compare 0x4000 0x5000 1000
+./isp /dev/ttyUSB1 compare 0x1000 0x5000 1000
+./isp /dev/ttyUSB1 compare 0x1000 0x5000 4
+./isp /dev/ttyUSB1 compare 0x1BB0 0x1C80 4
+./isp /dev/ttyUSB1 compare 0x1BB0 0x1BC8 4
+./isp /dev/ttyUSB1 compare 0x1BB0 0x1C08 4
+./isp /dev/ttyUSB1 go 512 toto
+./isp /dev/ttyUSB1 go 512 arm
+./isp /dev/ttyUSB1 go 512 thumb
+./isp /dev/ttyUSB1 unlock
+./isp /dev/ttyUSB1 go 512 thumb
+./isp /dev/ttyUSB1 read-boot-version
+./isp /dev/ttyUSB1 go 500 thumb
+./isp /dev/ttyUSB1 go 0x5000 thumb
+./isp /dev/ttyUSB1 -s
+./isp /dev/ttyUSB1 read-boot-version
+./isp /dev/ttyUSB1 read-boot-version
+./isp /dev/ttyUSB1 unlock
+./isp /dev/ttyUSB1 compare 0x1BB0 0x1C08 4
+./isp /dev/ttyUSB1 prepare-for-write 6 6
+./isp /dev/ttyUSB1 erase 6 6
+./isp /dev/ttyUSB1 blank-check 6 6
+./isp /dev/ttyUSB1 prepare-for-write 6 6
+./isp /dev/ttyUSB1 copy-ram-to-flash 0x6000 0x10000800 0x400
+./isp /dev/ttyUSB1 prepare-for-write 6 6
+./isp /dev/ttyUSB1 copy-ram-to-flash 0x6400 0x10000C00 0x400
+
+./isp /dev/ttyUSB1 read-memory 0x10000800 0x800 dumptest_ram
+./isp /dev/ttyUSB1 read-memory 0x6000 0x800 dumptest_flash
+diff dumptest_ram dumptest_flash
+
+./isp /dev/ttyUSB1 -s
+./isp /dev/ttyUSB1 unlock
+./isp /dev/ttyUSB1 prepare-for-write 6 6
+./isp /dev/ttyUSB1 erase 6 6
+./isp /dev/ttyUSB1 blank-check 6 6
+dd if=isp of=src bs=1024 count=1
+./isp /dev/ttyUSB1 write-to-ram 0x10000800 src
+./isp /dev/ttyUSB1 read-memory 0x10000800 0x400 reread
+diff src reread
+./isp /dev/ttyUSB1 prepare-for-write 6 6
+./isp /dev/ttyUSB1 copy-ram-to-flash 0x6000 0x10000800 0x400
+./isp /dev/ttyUSB1 read-memory 0x6000 0x400 reread_flash
+diff reread_flash src
+
+
