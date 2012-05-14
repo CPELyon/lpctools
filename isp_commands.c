@@ -37,6 +37,7 @@ struct isp_command {
 
 /* Max should be 1270 for read memory, a little bit more for writes */
 #define SERIAL_BUFSIZE  1300
+#define REP_BUFSIZE 100
 
 #define SYNCHRO_START "?"
 #define SYNCHRO  "Synchronized\r\n"
@@ -45,13 +46,24 @@ struct isp_command {
 #define DATA_BLOCK_RESEND "RESEND\r\n"
 #define SYNCHRO_ECHO_OFF "A 0\r\n"
 
-#define ISP_ABORT ""
+#define ISP_ABORT ""  /* Not handled */
 
 #define UNLOCK "U 23130\r\n"
 #define READ_UID "N\r\n"
 #define READ_PART_ID "J\r\n"
 #define READ_BOOT_VERSION "K\r\n"
 
+#define LINE_DATA_LENGTH 45
+#define LINES_PER_BLOCK 20
+#define MAX_DATA_BLOCK_SIZE (LINES_PER_BLOCK * LINE_DATA_LENGTH) /* 900 */
+#define MAX_BYTES_PER_LINE (1 + ((LINE_DATA_LENGTH / 3) * 4) + 2) /* "line length" (1) + 60 + \r\n */
+#define FILE_CREATE_MODE (S_IRUSR | S_IWUSR | S_IRGRP)
+
+#if (SERIAL_BUFSIZE < (MAX_BYTES_PER_LINE * LINES_PER_BLOCK + 10 + 2)) /* uuencoded data + checksum + \r\n */
+#error "SERIAL_BUFSIZE too small"
+#endif
+
+#define RAM_MAX_SIZE (8 * 1024) /* 8 KB */
 
 char* error_codes[] = {
 #define CMD_SUCCESS 0
@@ -115,7 +127,7 @@ int isp_ret_code(char* buf, char** endptr)
  */
 int isp_connect(unsigned int crystal_freq)
 {
-	char buf[SERIAL_BUFSIZE];
+	char buf[REP_BUFSIZE];
 	char freq[10];
 	
 	snprintf(freq, 8, "%d\r\n", crystal_freq);
@@ -126,7 +138,7 @@ int isp_connect(unsigned int crystal_freq)
 		return -5;
 	}
 	/* Wait for answer */
-	if (isp_serial_read(buf, SERIAL_BUFSIZE, strlen(SYNCHRO)) < 0) {
+	if (isp_serial_read(buf, REP_BUFSIZE, strlen(SYNCHRO)) < 0) {
 		printf("Error reading synchronize answer.\n");
 		return -4;
 	}
@@ -140,7 +152,7 @@ int isp_connect(unsigned int crystal_freq)
 	/* Empty read buffer (echo is on) */
 	isp_serial_read(buf, strlen(SYNCHRO), strlen(SYNCHRO));
 	/* Read reply (OK) */
-	isp_serial_read(buf, SERIAL_BUFSIZE, strlen(SYNCHRO_OK));
+	isp_serial_read(buf, REP_BUFSIZE, strlen(SYNCHRO_OK));
 	if (strncmp(SYNCHRO_OK, buf, strlen(SYNCHRO_OK)) != 0) {
 		printf("Unable to synchronize, synchro not acknowledged.\n");
 		return -2;
@@ -151,7 +163,7 @@ int isp_connect(unsigned int crystal_freq)
 	/* Empty read buffer (echo is on) */
 	isp_serial_read(buf, strlen(freq), strlen(freq));
 	/* Read reply (OK) */
-	isp_serial_read(buf, SERIAL_BUFSIZE, strlen(SYNCHRO_OK));
+	isp_serial_read(buf, REP_BUFSIZE, strlen(SYNCHRO_OK));
 	if (strncmp(SYNCHRO_OK, buf, strlen(SYNCHRO_OK)) != 0) {
 		printf("Unable to synchronize, crystal frequency not acknowledged.\n");
 		return -2;
@@ -162,31 +174,39 @@ int isp_connect(unsigned int crystal_freq)
 	/* Empty read buffer (echo still on) */
 	isp_serial_read(buf, strlen(SYNCHRO_ECHO_OFF), strlen(SYNCHRO_ECHO_OFF));
 	/* Read eror code for command */
-	isp_serial_read(buf, SERIAL_BUFSIZE, 3);
+	isp_serial_read(buf, REP_BUFSIZE, 3);
 
 	printf("Device session openned.\n");
 
 	return 1;
 }
 
-int isp_cmd_unlock(int arg_count, char** args)
+int isp_send_cmd_no_args(char* cmd_name, char* cmd)
 {
-	char buf[SERIAL_BUFSIZE];
+	char buf[5];
 	int ret = 0, len = 0;
 	
-	/* Send read-uid request */
-	if (isp_serial_write(UNLOCK, strlen(UNLOCK)) != strlen(UNLOCK)) {
-		printf("Unable to send unlock request.\n");
+	/* Send request */
+	if (isp_serial_write(cmd, strlen(cmd)) != (int)strlen(cmd)) {
+		printf("Unable to send %s request.\n", cmd_name);
 		return -5;
 	}
 	/* Wait for answer */
 	usleep( 5000 );
-	len = isp_serial_read(buf, SERIAL_BUFSIZE, 1);
+	len = isp_serial_read(buf, 3, 3);
 	if (len <= 0) {
-		printf("Error reading unlock acknowledge.\n");
+		printf("Error reading %s acknowledge.\n", cmd_name);
 		return -4;
 	}
 	ret = isp_ret_code(buf, NULL);
+	return ret;
+}
+
+int isp_cmd_unlock(int arg_count, char** args)
+{
+	int ret = 0;
+
+	ret = isp_send_cmd_no_args("unlock", UNLOCK);
 	if (ret != 0) {
 		printf("Unlock error.\n");
 		return -1;
@@ -198,28 +218,22 @@ int isp_cmd_unlock(int arg_count, char** args)
 
 int isp_cmd_read_uid(int arg_count, char** args)
 {
-	char buf[SERIAL_BUFSIZE];
+	char buf[REP_BUFSIZE];
 	char* tmp = NULL;
 	int i = 0, ret = 0, len = 0;
 	unsigned long int uid[4];
 	
-	/* Send read-uid request */
-	if (isp_serial_write(READ_UID, strlen(READ_UID)) != strlen(READ_UID)) {
-		printf("Unable to send read-uid request.\n");
-		return -5;
+	ret = isp_send_cmd_no_args("read-uid", READ_UID);
+	if (ret != 0) {
+		printf("Read UID error.\n");
+		return ret;
 	}
-	/* Wait for answer */
-	usleep( 5000 );
-	len = isp_serial_read(buf, SERIAL_BUFSIZE, 50);
+	len = isp_serial_read(buf, REP_BUFSIZE, 50);
 	if (len <= 0) {
 		printf("Error reading uid.\n");
-		return -4;
+		return -2;
 	}
-	ret = isp_ret_code(buf, &tmp);
-	if (ret != 0) {
-		printf("This cannot happen ... as long as you trust the user manual.\n");
-		return -1;
-	}
+	tmp = buf;
 	for (i=0; i<4; i++) {
 		static char* endptr = NULL;
 		uid[i] = strtoul(tmp, &endptr, 10);
@@ -232,30 +246,22 @@ int isp_cmd_read_uid(int arg_count, char** args)
 
 int isp_cmd_part_id(int arg_count, char** args)
 {
-	char buf[SERIAL_BUFSIZE];
+	char buf[REP_BUFSIZE];
 	int ret = 0, len = 0;
-	char* tmp = NULL;
 	unsigned long int part_id = 0;
 
-	/* Send read-part-id request */
-	if (isp_serial_write(READ_PART_ID, strlen(READ_PART_ID)) != strlen(READ_PART_ID)) {
-		printf("Unable to send read-part-id request.\n");
-		return -5;
-	}
-	/* Wait for answer */
-	usleep( 5000 );
-	len = isp_serial_read(buf, SERIAL_BUFSIZE, 10);
-	if (len <= 0) {
-		printf("Error reading part id.\n");
-		return -4;
-	}
-	ret = isp_ret_code(buf, &tmp);
+	ret = isp_send_cmd_no_args("read-part-id", READ_PART_ID);
 	if (ret != 0) {
-		printf("This cannot happen ... as long as you trust the user manual.\n");
-		return -1;
+		printf("Read part ID error.\n");
+		return ret;
+	}
+	len = isp_serial_read(buf, REP_BUFSIZE, 15);
+	if (len <= 0) {
+		printf("Error reading part ID.\n");
+		return -2;
 	}
 	/* FIXME : some part IDs are on two 32bits values */
-	part_id = strtoul(tmp, NULL, 10);
+	part_id = strtoul(buf, NULL, 10);
 	printf("Part ID is 0x%08lx\n", part_id);
 
 	return 0;
@@ -263,33 +269,116 @@ int isp_cmd_part_id(int arg_count, char** args)
 
 int isp_cmd_boot_version(int arg_count, char** args)
 {
-	char buf[SERIAL_BUFSIZE];
+	char buf[REP_BUFSIZE];
 	int ret = 0, len = 0;
 	char* tmp = NULL;
 	unsigned int ver[2];
 
-	/* Send read-boot-version request */
-	if (isp_serial_write(READ_BOOT_VERSION, strlen(READ_BOOT_VERSION)) != strlen(READ_BOOT_VERSION)) {
-		printf("Unable to send read-boot-version request.\n");
-		return -5;
+	ret = isp_send_cmd_no_args("read-boot-version", READ_BOOT_VERSION);
+	if (ret != 0) {
+		printf("Read boot version error.\n");
+		return ret;
 	}
-	/* Wait for answer */
-	usleep( 5000 );
-	len = isp_serial_read(buf, SERIAL_BUFSIZE, 5);
+	len = isp_serial_read(buf, REP_BUFSIZE, 20);
 	if (len <= 0) {
 		printf("Error reading boot version.\n");
-		return -4;
+		return -2;
 	}
-	ret = isp_ret_code(buf, &tmp);
-	if (ret != 0) {
-		printf("This cannot happen ... as long as you trust the user manual.\n");
-		return -1;
-	}
-	ver[0] = strtoul(tmp, &tmp, 10);
+	ver[0] = strtoul(buf, &tmp, 10);
 	ver[1] = strtoul(tmp, NULL, 10);
 	printf("Boot code version is %u.%u\n", ver[0], ver[1]);
 
 	return 0;
+}
+
+int isp_send_cmd_two_args(char* cmd_name, char cmd, unsigned int arg1, unsigned int arg2)
+{
+	char buf[REP_BUFSIZE];
+	int ret = 0, len = 0;
+
+	/* Create read-memory request */
+	len = snprintf(buf, REP_BUFSIZE, "%c %u %u\r\n", cmd, arg1, arg2);
+	if (len > REP_BUFSIZE) {
+		len = REP_BUFSIZE; /* This should not happen if REP_BUFSIZE is 32 or more ... */
+	}
+
+	/* Send request */
+	if (isp_serial_write(buf, len) != len) {
+		printf("Unable to send %s request.\n", cmd_name);
+		return -5;
+	}
+	/* Wait for answer */
+	usleep( 5000 );
+	len = isp_serial_read(buf, 3, 3);
+	if (len <= 0) {
+		printf("Error reading %s acknowledge.\n", cmd_name);
+		return -4;
+	}
+	ret = isp_ret_code(buf, NULL);
+	return ret;
+}
+
+int get_remaining_blocksize(unsigned int count, unsigned int actual_count, char* dir, unsigned int i)
+{
+	unsigned int blocksize = 0;
+	unsigned int remain = count - actual_count;
+
+	if (remain >= MAX_DATA_BLOCK_SIZE) {
+		blocksize = (MAX_BYTES_PER_LINE * LINES_PER_BLOCK);
+		if (trace_on) {
+			printf("%s block %d (%d line(s)).\n", dir, i, LINES_PER_BLOCK);
+		}
+	} else {
+		unsigned int nb_last_lines = (remain / LINE_DATA_LENGTH);
+		if (remain % LINE_DATA_LENGTH) {
+			nb_last_lines += 1;
+		}
+		/* 4 bytes transmitted for each 3 data bytes */
+		blocksize = ((remain / 3) * 4);
+		if (remain % 3) {
+			blocksize += 4;
+		}
+		/* Add one byte per line for the starting "length character" and two bytes per
+		 * line for the ending "\r\n" */
+		blocksize += (3 * nb_last_lines);
+		if (trace_on) {
+			printf("%s block %d of size %u (%d line(s)).\n", dir, i, blocksize, nb_last_lines);
+		}
+	}
+	return blocksize;
+}
+
+/* Compute the number of blocks of the transmitted data. */
+int get_nb_blocks(unsigned int count, char* dir)
+{
+	unsigned int lines = 0;
+	unsigned int blocks = 0;
+
+	/* See section 21.4.3 of LPC11xx user's manual (UM10398) */
+	lines = (count / LINE_DATA_LENGTH);
+	if (count % LINE_DATA_LENGTH) {
+		lines += 1;
+	}
+	blocks = (lines / LINES_PER_BLOCK);
+	if (lines % LINES_PER_BLOCK) {
+		blocks += 1;
+	}
+	if (trace_on) {
+		printf("%s %d block(s) (%d line(s)).\n", dir, blocks, lines);
+	}
+
+	return blocks;
+}
+
+unsigned int calc_checksum(unsigned char* data, unsigned int size)
+{
+	unsigned int i = 0;
+	unsigned int checksum = 0;
+
+	for (i=0; i<size; i++) {
+		checksum += data[i];
+	}
+	return checksum;
 }
 
 int isp_cmd_read_memory(int arg_count, char** args)
@@ -302,8 +391,8 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	char* out_file_name = NULL;
 	int out_fd = -1;
 	/* Reply handling */
-	unsigned int lines = 0, blocks = 0;
-	unsigned int total_bytes_received = 0;
+	unsigned int blocks = 0;
+	unsigned int total_bytes_received = 0; /* actual count of bytes received */
 	unsigned int i = 0;
 
 	/* Check read-memory arguments */
@@ -323,50 +412,16 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	}
 	out_file_name = args[2];
 	
-	/* Create read-memory request */
-	len = snprintf(buf, SERIAL_BUFSIZE, "R %lu %lu\r\n", addr, count);
-	if (len > SERIAL_BUFSIZE) {
-		len = SERIAL_BUFSIZE; /* This should not happen if SERIAL_BUFSIZE is 32 or more ... */
-	}
-
-	/* Send read-memory request */
-	if (isp_serial_write(buf, len) != len) {
-		printf("Unable to send read-memory request.\n");
-		return -10;
-	}
-	/* And receive and decode the answer */
-	usleep( 2000 );
-	/* First, check return code. This will also remove the first 3 caracters from the
-     * reply so we get only interresting caracters in the buffer. */
-	len = isp_serial_read(buf, 3, 3);
-	if (len <= 0) {
-		printf("Error reading memory.\n");
-		return -9;
-	}
-	ret = isp_ret_code(buf, NULL);
+	/* Send command */
+	ret = isp_send_cmd_two_args("read-memory", 'R', addr, count);
 	if (ret != 0) {
 		printf("Error when trying to read %lu bytes of memory at address 0x%08lx.\n", count, addr);
-		return -8;
+		return ret;
 	}
 
-	/* Now, find the number of lines and the length of the reply.
-	 * See section 21.4.3 of LPC11xx user's manual (UM10398) */
-#define LINE_DATA_LENGTH 45
-#define LINES_PER_BLOCK 20
-#define MAX_DATA_BLOCK_SIZE (LINES_PER_BLOCK * LINE_DATA_LENGTH) /* 900 */
-#define MAX_BYTES_PER_LINE (((LINE_DATA_LENGTH / 3) * 4) + 1 + 2) /* 60 + "line length" + \r\n */
-#define FILE_CREATE_MODE (S_IRUSR | S_IWUSR | S_IRGRP)
-	lines = (count / LINE_DATA_LENGTH);
-	if (count % LINE_DATA_LENGTH) {
-		lines += 1;
-	}
-	blocks = (lines / LINES_PER_BLOCK);
-	if (lines % LINES_PER_BLOCK) {
-		blocks += 1;
-	}
-	if (trace_on) {
-		printf("Reading %d block(s) (%d line(s)).\n", blocks, lines);
-	}
+	/* Now, find the number of blocks of the reply. */
+	blocks = get_nb_blocks(count, "Reading");
+
 	/* Open file for writing if output is not stdout */
 	if (strncmp(out_file_name, "-", strlen(out_file_name)) == 0) {
 		out_fd = STDOUT_FILENO;
@@ -379,39 +434,17 @@ int isp_cmd_read_memory(int arg_count, char** args)
 		}
 	}
 	
-	ret = 0;
 	/* Receive and decode the data */
+	/* FIXME : Factorize ? */
 	for (i=0; i<blocks; i++) {
 		char data[SERIAL_BUFSIZE];
 		unsigned int blocksize = 0, decoded_size = 0;
 		unsigned int received_checksum = 0, computed_checksum = 0;
 		static int resend_request_for_block = 0;
-		unsigned int j = 0;
 
+		/* First compute the next block size */
+		blocksize = get_remaining_blocksize(count, total_bytes_received, "Reading", i);
 		/* Read the uuencoded data */
-		if ((count - total_bytes_received) >= MAX_DATA_BLOCK_SIZE) {
-			blocksize = (MAX_BYTES_PER_LINE * LINES_PER_BLOCK);
-			if (trace_on) {
-				printf("Reading block %d (%d line(s)).\n", i, LINES_PER_BLOCK);
-			}
-		} else {
-			unsigned int remain = count - total_bytes_received;
-			unsigned int nb_last_lines = (remain / LINE_DATA_LENGTH);
-			if (remain % LINE_DATA_LENGTH) {
-				nb_last_lines += 1;
-			}
-			/* 4 bytes transmitted for each 3 data bytes */
-			blocksize = ((remain / 3) * 4);
-			if (remain % 3) {
-				blocksize += 4;
-			}
-			/* Add one byte per line for the starting "length character" and two bytes per
-			 * line for the ending "\r\n" */
-			blocksize += (3 * nb_last_lines);
-			if (trace_on) {
-				printf("Reading block %d of size %u (%d line(s)).\n", i, blocksize, nb_last_lines);
-			}
-		}
 		len = isp_serial_read(buf, SERIAL_BUFSIZE, blocksize);
 		if (len <= 0) {
 			printf("Error reading memory.\n");
@@ -421,7 +454,7 @@ int isp_cmd_read_memory(int arg_count, char** args)
 		usleep( 1000 );
 		/* Now read the checksum, maybe not yet received */
 		len += isp_serial_read((buf + len), (SERIAL_BUFSIZE - len), ((len > (int)blocksize) ? 0 : 3));
-		if (len < 0) { /* Length may be null, as may already have received everything */
+		if (len < 0) { /* Length may be null, as we may already have received everything */
 			printf("Error reading memory (checksum part).\n");
 			ret = -5;
 			break;
@@ -430,9 +463,7 @@ int isp_cmd_read_memory(int arg_count, char** args)
 		 * compute the checksum */
 		decoded_size = isp_uu_decode(data, buf, blocksize);
 		received_checksum = strtoul((buf + blocksize), NULL, 10);
-		for (j=0; j<decoded_size; j++) {
-			computed_checksum += (unsigned char)data[j];
-		}
+		computed_checksum = calc_checksum((unsigned char*)data, decoded_size);
 		if (trace_on) {
 			printf("Decoded Data :\n");
 			isp_dump((unsigned char*)data, decoded_size);
@@ -488,7 +519,158 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	return ret;
 }
 
-int isp_cmd_address_skel(int arg_count, char** args, char* name, char cmd)
+int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count)
+{
+	/* Serial communication */
+	int ret = 0, len = 0;
+	/* Reply handling */
+	unsigned int blocks = 0;
+	unsigned int total_bytes_sent = 0;
+	unsigned int i = 0;
+
+	/* Send write-to-ram request */
+	ret = isp_send_cmd_two_args("write-to-ram", 'W', addr, count);
+	if (ret != 0) {
+		printf("Error when trying to start write procedure to address 0x%08lx.\n", addr);
+		return -8;
+	}
+
+	/* Now, find the number of blocks of data to send. */
+	blocks = get_nb_blocks(count, "Sending");
+	
+	/* Encode and send the data */
+	for (i=0; i<blocks; i++) {
+		char buf[SERIAL_BUFSIZE]; /* Store encoded data, to be sent to the microcontroller */
+		char repbuf[REP_BUFSIZE];
+		unsigned int datasize = 0, encoded_size = 0;
+		unsigned int computed_checksum = 0;
+		static int resend_requested_for_block = 0;
+
+		/* First compute the next block size */
+		datasize = (count - total_bytes_sent);
+		if (datasize >= MAX_DATA_BLOCK_SIZE) {
+			datasize = MAX_DATA_BLOCK_SIZE;
+		}
+		/* uuencode data */
+		encoded_size = isp_uu_encode(buf, data + total_bytes_sent, datasize);
+		/* Add checksum */
+		computed_checksum = calc_checksum((unsigned char*)(data + total_bytes_sent), datasize);
+		encoded_size += snprintf((buf + encoded_size), 12, "%u\r\n", computed_checksum);
+		if (trace_on) {
+			printf("Encoded Data :\n");
+			isp_dump((unsigned char*)buf, encoded_size);
+		}
+
+		if (isp_serial_write(buf, encoded_size) != (int)encoded_size) {
+			printf("Error sending uuencoded data.\n");
+			ret = -6;
+			break;
+		}
+		usleep( 20000 );
+		len = isp_serial_read(repbuf, REP_BUFSIZE, 4);
+		if (len <= 0) {
+			printf("Error reading write acknowledge.\n");
+			return -5;
+		}
+		if (strncmp(DATA_BLOCK_OK, repbuf, strlen(DATA_BLOCK_OK)) == 0) {
+			total_bytes_sent += datasize;
+			resend_requested_for_block = 0; /* reset resend request counter */
+			if (trace_on) {
+				printf("Block %d sent.\n", i);
+			}
+		} else {
+			resend_requested_for_block++;
+			if (trace_on) {
+				printf("Checksum error for block %u, error number: %d.\n", i, resend_requested_for_block);
+			}
+			if (resend_requested_for_block >= 3) {
+				printf("Block %d still wrong after 3 attempts, aborting.\n", i);
+				ret = -2;
+				break;
+			}
+			/* Back to previous block */
+			i--;
+		}
+	}
+
+	return ret;
+}
+
+int isp_cmd_write_to_ram(int arg_count, char** args)
+{
+	/* Arguments */
+	unsigned long int addr = 0;
+	char* in_file_name = NULL;
+	int in_fd = -1;
+	char file_buff[RAM_MAX_SIZE];
+	unsigned int bytes_read = 0;
+	int ret = 0;
+
+	/* Check write-to-ram arguments */
+	if (arg_count != 2) {
+		printf("write-to-ram command needs ram address. Must be multiple of 4.\n");
+		return -15;
+	}
+	addr = strtoul(args[0], NULL, 0);
+	if (trace_on) {
+		printf("write-to-ram command called, destination address in ram is 0x%08lx.\n", addr);
+	}
+	if (addr & 0x03) {
+		printf("Address must be multiple of 4 for write-to-ram command.\n");
+		return -14;
+	}
+	in_file_name = args[1];
+
+	/* Open file for reading if input is not stdin */
+	if (strncmp(in_file_name, "-", strlen(in_file_name)) == 0) {
+		/* FIXME : set as non blocking ? */
+		in_fd = STDIN_FILENO;
+	} else {
+		in_fd = open(in_file_name, O_RDONLY | O_NONBLOCK);
+		if (in_fd <= 0) {
+			perror("Unable to open file for reading");
+			printf("Tried to open \"%s\".\n", in_file_name);
+			return -13;
+		}
+	}
+	/* Read file content */
+	do {
+		int nb = read(in_fd, &file_buff[bytes_read], (RAM_MAX_SIZE - bytes_read));
+		if (nb < 0) {
+			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+				usleep( 50 );
+				continue;
+			}
+			perror("Input file read error");
+			if (in_fd != STDIN_FILENO) {
+				close(in_fd);
+			}
+			return -12;
+		} else if (nb == 0) {
+			/* End of file */
+			break;
+		}
+		bytes_read += nb;
+	} while (bytes_read < RAM_MAX_SIZE);
+	if (in_fd != STDIN_FILENO) {
+		close(in_fd);
+	}
+	if (trace_on) {
+		printf("Read %d octet(s) from input file\n", bytes_read);
+	}
+
+	/* Pad data size to 4 */
+	if (bytes_read & 0x03) {
+		bytes_read = (bytes_read & ~0x03) + 0x04;
+	}
+
+	/* And send to ram */
+	ret = isp_send_buf_to_ram(file_buff, addr, bytes_read);
+
+	return ret;
+}
+
+int isp_send_cmd_address(int arg_count, char** args, char* name, char cmd)
 {
 	char buf[SERIAL_BUFSIZE];
 	int ret = 0, len = 0;
@@ -563,7 +745,7 @@ int isp_cmd_compare(int arg_count, char** args)
 	int ret = 0, len = 0;
 	unsigned long int offset = 0;
 	
-	ret = isp_cmd_address_skel(arg_count, args, "compare", 'M');
+	ret = isp_send_cmd_address(arg_count, args, "compare", 'M');
 	switch (ret) {
 		case CMD_SUCCESS:
 			printf("Source and destination data are equal.\n");
@@ -591,7 +773,7 @@ int isp_cmd_copy_ram_to_flash(int arg_count, char** args)
 {
 	int ret = 0;
 
-	ret = isp_cmd_address_skel(arg_count, args, "copy-ram-to-flash", 'C');
+	ret = isp_send_cmd_address(arg_count, args, "copy-ram-to-flash", 'C');
 	
 	if (ret != 0) {
 		printf("Error when trying to copy data from ram to flash.\n");
@@ -770,20 +952,9 @@ int isp_cmd_erase(int arg_count, char** args)
 }
 
 
-/* FIXME : Temporary place-holder */
-int isp_cmd_null(int arg_count, char** args)
-{
-	int i = 0;
-	printf("command not yet handled, called with %d arguments.\n", arg_count);
-	for (i=0; i<arg_count; i++) {
-		printf("\targ[%d] : \"%s\"\n", i, args[i]);
-	}
-	return 0;
-}
-
 static struct isp_command isp_cmds_list[] = {
 	{"unlock", 0, isp_cmd_unlock},
-	{"write-to-ram", 0, isp_cmd_null}, /* isp_cmd_write-to-ram} */
+	{"write-to-ram", 2, isp_cmd_write_to_ram},
 	{"read-memory", 3, isp_cmd_read_memory},
 	{"prepare-for-write", 2, isp_cmd_prepare_for_write},
 	{"copy-ram-to-flash", 3, isp_cmd_copy_ram_to_flash},
