@@ -148,6 +148,7 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 {
 	int nb = 0;
 	unsigned int count = 0;
+	unsigned int loops = 0; /* Used to create a timeout */
 	
 	if (min_read > buf_size) {
 		printf("serial_read: buffer too small for min read value.\n");
@@ -158,6 +159,9 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 		nb = read(serial_fd, &buf[count], (buf_size - count));
 		if (nb < 0) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+				if (loops++ > 100) {
+					break; /* timeout at 500ms */
+				}
 				usleep( 5000 );
 				continue;
 			}
