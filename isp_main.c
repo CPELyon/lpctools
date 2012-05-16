@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 			printf("NOT SYNCHRONIZED !\n");
 			return -1;
 		}
-		isp_connect(crystal_freq);
+		isp_connect(crystal_freq, 0);
 		isp_serial_close();
 		return 0;
 	}

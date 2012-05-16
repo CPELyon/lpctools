@@ -18,7 +18,7 @@
 /* Connect or reconnect to the target.
  * Return positive or NULL value when connection is OK, or negative value otherwise.
  */
-int isp_connect(unsigned int crystal_freq);
+int isp_connect(unsigned int crystal_freq, int quiet);
 
 
 

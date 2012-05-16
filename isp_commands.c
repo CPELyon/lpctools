@@ -102,15 +102,17 @@ char* error_codes[] = {
 	"CODE_READ_PROTECTION_ENABLED",
 };
 
-int isp_ret_code(char* buf, char** endptr)
+int isp_ret_code(char* buf, char** endptr, int quiet)
 {
 	unsigned int ret = 0;
 	ret = strtoul(buf, endptr, 10);
 	/* FIXME : Find how return code are sent (binary or ASCII) */
-	if (ret > (sizeof(error_codes)/sizeof(char*))) {
-		printf("Received unknown error code '%u' !\n", ret);
-	} else if ((ret != 0) || trace_on) {
-		printf("Received error code '%u': %s\n", ret, error_codes[ret]);
+	if (quiet != 1) {
+		if (ret > (sizeof(error_codes)/sizeof(char*))) {
+			printf("Received unknown error code '%u' !\n", ret);
+		} else if ((ret != 0) || trace_on) {
+			printf("Received error code '%u': %s\n", ret, error_codes[ret]);
+		}
 	}
 	return ret;
 }
@@ -119,7 +121,7 @@ int isp_ret_code(char* buf, char** endptr)
 /* Connect or reconnect to the target.
  * Return positive or NULL value when connection is OK, or negative value otherwise.
  */
-int isp_connect(unsigned int crystal_freq)
+int isp_connect(unsigned int crystal_freq, int quiet)
 {
 	char buf[REP_BUFSIZE];
 	char freq[10];
@@ -140,7 +142,9 @@ int isp_connect(unsigned int crystal_freq)
 	if (strncmp(SYNCHRO, buf, strlen(SYNCHRO)) == 0) {
 		isp_serial_write(SYNCHRO, strlen(SYNCHRO));
 	} else {
-		printf("Unable to synchronize, no synchro received.\n");
+		if (quiet != 1) {
+			printf("Unable to synchronize, no synchro received.\n");
+		}
 		return -3;
 	}
 	/* Empty read buffer (echo is on) */
@@ -170,12 +174,13 @@ int isp_connect(unsigned int crystal_freq)
 	/* Read eror code for command */
 	isp_serial_read(buf, REP_BUFSIZE, 3);
 
+	/* Leave it even in quiet mode, so the user knows something is going on */
 	printf("Device session openned.\n");
 
 	return 1;
 }
 
-int isp_send_cmd_no_args(char* cmd_name, char* cmd)
+int isp_send_cmd_no_args(char* cmd_name, char* cmd, int quiet)
 {
 	char buf[5];
 	int ret = 0, len = 0;
@@ -192,7 +197,7 @@ int isp_send_cmd_no_args(char* cmd_name, char* cmd)
 		printf("Error reading %s acknowledge.\n", cmd_name);
 		return -4;
 	}
-	ret = isp_ret_code(buf, NULL);
+	ret = isp_ret_code(buf, NULL, quiet);
 	return ret;
 }
 
@@ -200,7 +205,7 @@ int isp_cmd_unlock(int quiet)
 {
 	int ret = 0;
 
-	ret = isp_send_cmd_no_args("unlock", UNLOCK);
+	ret = isp_send_cmd_no_args("unlock", UNLOCK, quiet);
 	if (ret != 0) {
 		printf("Unlock error.\n");
 		return -1;
@@ -219,7 +224,7 @@ int isp_cmd_read_uid(void)
 	int i = 0, ret = 0, len = 0;
 	unsigned long int uid[4];
 	
-	ret = isp_send_cmd_no_args("read-uid", READ_UID);
+	ret = isp_send_cmd_no_args("read-uid", READ_UID, 0);
 	if (ret != 0) {
 		printf("Read UID error.\n");
 		return ret;
@@ -246,9 +251,11 @@ int isp_cmd_part_id(int quiet)
 	int ret = 0, len = 0;
 	unsigned long int part_id = 0;
 
-	ret = isp_send_cmd_no_args("read-part-id", READ_PART_ID);
+	ret = isp_send_cmd_no_args("read-part-id", READ_PART_ID, quiet);
 	if (ret != 0) {
-		printf("Read part ID error.\n");
+		if (quiet != 1) {
+			printf("Read part ID error.\n");
+		}
 		return ret;
 	}
 	len = isp_serial_read(buf, REP_BUFSIZE, 15);
@@ -272,7 +279,7 @@ int isp_cmd_boot_version(void)
 	char* tmp = NULL;
 	unsigned int ver[2];
 
-	ret = isp_send_cmd_no_args("read-boot-version", READ_BOOT_VERSION);
+	ret = isp_send_cmd_no_args("read-boot-version", READ_BOOT_VERSION, 0);
 	if (ret != 0) {
 		printf("Read boot version error.\n");
 		return ret;
@@ -312,7 +319,7 @@ int isp_send_cmd_two_args(char* cmd_name, char cmd, unsigned int arg1, unsigned 
 		printf("Error reading %s acknowledge.\n", cmd_name);
 		return -4;
 	}
-	ret = isp_ret_code(buf, NULL);
+	ret = isp_ret_code(buf, NULL, 0);
 	return ret;
 }
 
@@ -733,7 +740,7 @@ int isp_send_cmd_address(int arg_count, char** args, char* name, char cmd)
 		printf("Error reading %s result.\n", name);
 		return -4;
 	}
-	ret = isp_ret_code(buf, &tmp);
+	ret = isp_ret_code(buf, &tmp, 0);
 	return ret;
 }
 
@@ -831,7 +838,7 @@ int isp_cmd_go(int arg_count, char** args)
 		printf("Error reading go result.\n");
 		return -3;
 	}
-	ret = isp_ret_code(buf, NULL);
+	ret = isp_ret_code(buf, NULL, 0);
 	if (ret != 0) {
 		printf("Error when trying to execute programm at 0x%08lx in %s mode.\n", addr, mode);
 		return -1;
@@ -879,7 +886,7 @@ int isp_cmd_sectors_skel(int arg_count, char** args, char* name, char cmd)
 		printf("Error reading %s result.\n", name);
 		return -4;
 	}
-	ret = isp_ret_code(buf, NULL);
+	ret = isp_ret_code(buf, NULL, 0);
 
 	return ret;
 }
