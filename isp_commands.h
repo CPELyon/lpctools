@@ -10,38 +10,45 @@
  *
  *********************************************************************/
 
-/* List of commands to be supported :
-  synchronize
-  unlock 
-  set-baud-rate
-  echo
-  write-to-ram
-  read-memory
-  prepare-for-write
-  copy-ram-to-flash
-  go
-  erase
-  blank-check
-  read-part-id
-  read-boot-version
-  compare
-  read-uid
-*/
+#ifndef ISP_COMMANDS_H
+#define ISP_COMMANDS_H
 
-#ifndef ISP_COMMADS_H
-#define ISP_COMMADS_H
 
-int isp_ret_code(char* buf);
 
 /* Connect or reconnect to the target.
  * Return positive or NULL value when connection is OK, or negative value otherwise.
  */
 int isp_connect(unsigned int crystal_freq);
 
-/* Handle one command
- * Return positive or NULL value when command handling is OK, or negative value otherwise.
- */
-int isp_handle_command(char* cmd, int arg_count, char** args);
 
-#endif /* ISP_COMMADS_H */
+
+int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count);
+
+
+int isp_cmd_unlock(int quiet);
+
+int isp_cmd_read_uid(void);
+
+int isp_cmd_part_id(int quiet);
+
+int isp_cmd_boot_version(void);
+
+int isp_cmd_read_memory(int arg_count, char** args);
+
+int isp_cmd_write_to_ram(int arg_count, char** args);
+
+int isp_cmd_compare(int arg_count, char** args);
+
+int isp_cmd_copy_ram_to_flash(int arg_count, char** args);
+
+int isp_cmd_go(int arg_count, char** args);
+
+int isp_cmd_blank_check(int arg_count, char** args);
+
+int isp_cmd_prepare_for_write(int arg_count, char** args);
+
+int isp_cmd_erase(int arg_count, char** args);
+
+
+#endif /* ISP_COMMANDS_H */
 

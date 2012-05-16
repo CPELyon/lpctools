@@ -28,12 +28,6 @@
 
 extern int trace_on;
 
-struct isp_command {
-	char* name;
-	int nb_args;
-	int (*handler)(int arg_count, char** args);
-};
-
 
 /* Max should be 1270 for read memory, a little bit more for writes */
 #define SERIAL_BUFSIZE  1300
@@ -202,7 +196,7 @@ int isp_send_cmd_no_args(char* cmd_name, char* cmd)
 	return ret;
 }
 
-int isp_cmd_unlock(int arg_count, char** args)
+int isp_cmd_unlock(int quiet)
 {
 	int ret = 0;
 
@@ -211,12 +205,14 @@ int isp_cmd_unlock(int arg_count, char** args)
 		printf("Unlock error.\n");
 		return -1;
 	}
-	printf("Device memory protection unlocked.\n");
+	if (quiet == 0) {
+		printf("Device memory protection unlocked.\n");
+	}
 
 	return 0;
 }
 
-int isp_cmd_read_uid(int arg_count, char** args)
+int isp_cmd_read_uid(void)
 {
 	char buf[REP_BUFSIZE];
 	char* tmp = NULL;
@@ -244,7 +240,7 @@ int isp_cmd_read_uid(int arg_count, char** args)
 	return 0;
 }
 
-int isp_cmd_part_id(int arg_count, char** args)
+int isp_cmd_part_id(int quiet)
 {
 	char buf[REP_BUFSIZE];
 	int ret = 0, len = 0;
@@ -262,12 +258,14 @@ int isp_cmd_part_id(int arg_count, char** args)
 	}
 	/* FIXME : some part IDs are on two 32bits values */
 	part_id = strtoul(buf, NULL, 10);
-	printf("Part ID is 0x%08lx\n", part_id);
+	if (quiet == 0) {
+		printf("Part ID is 0x%08lx\n", part_id);
+	}
 
-	return 0;
+	return part_id;
 }
 
-int isp_cmd_boot_version(int arg_count, char** args)
+int isp_cmd_boot_version(void)
 {
 	char buf[REP_BUFSIZE];
 	int ret = 0, len = 0;
@@ -679,7 +677,7 @@ int isp_send_cmd_address(int arg_count, char** args, char* name, char cmd)
 	unsigned long int addr1 = 0, addr2 = 0;
 	unsigned long int length = 0;
 
-	/* Check compare arguments */
+	/* Check arguments */
 	if (arg_count != 3) {
 		printf("%s command needs two addresses and byte count.\n", name);
 		return -7;
@@ -717,13 +715,13 @@ int isp_send_cmd_address(int arg_count, char** args, char* name, char cmd)
 			return -6;
 	}
 
-	/* Create compare request */
+	/* Create request */
 	len = snprintf(buf, SERIAL_BUFSIZE, "%c %lu %lu %lu\r\n", cmd, addr1, addr2, length);
 	if (len > SERIAL_BUFSIZE) {
 		len = SERIAL_BUFSIZE;
 	}
 
-	/* Send compare request */
+	/* Send request */
 	if (isp_serial_write(buf, len) != len) {
 		printf("Unable to send %s request.\n", name);
 		return -5;
@@ -951,65 +949,5 @@ int isp_cmd_erase(int arg_count, char** args)
 	return 0;
 }
 
-
-static struct isp_command isp_cmds_list[] = {
-	{"unlock", 0, isp_cmd_unlock},
-	{"write-to-ram", 2, isp_cmd_write_to_ram},
-	{"read-memory", 3, isp_cmd_read_memory},
-	{"prepare-for-write", 2, isp_cmd_prepare_for_write},
-	{"copy-ram-to-flash", 3, isp_cmd_copy_ram_to_flash},
-	{"go", 2, isp_cmd_go},
-	{"erase", 2, isp_cmd_erase},
-	{"blank-check", 2, isp_cmd_blank_check},
-	{"read-part-id", 0, isp_cmd_part_id},
-	{"read-boot-version", 0, isp_cmd_boot_version},
-	{"compare", 3, isp_cmd_compare},
-	{"read-uid", 0, isp_cmd_read_uid},
-	{NULL, 0, NULL}
-};
-
-void isp_warn_trailing_args(int cmd_num, int arg_count, char** args)
-{
-	int i = 0;
-	printf("command \"%s\" needs %d args, got %d.\n",
-			isp_cmds_list[cmd_num].name,
-			isp_cmds_list[cmd_num].nb_args, arg_count);
-	for (i=0; i<arg_count; i++) {
-		printf("\targ[%d] : \"%s\"\n", i, args[i]);
-	}
-}
-
-/* Handle one command
- * Return positive or NULL value when command handling is OK, or negative value otherwise.
- */
-int isp_handle_command(char* cmd, int arg_count, char** args)
-{
-	int cmd_found = -1;
-	int ret = 0;
-	int index = 0;
-
-	if (cmd == NULL) {
-		printf("isp_handle_command called with no command !\n");
-		return -1;
-	}
-
-	while ((cmd_found == -1) && (isp_cmds_list[index].name != NULL)) {
-		if (strncmp(isp_cmds_list[index].name, cmd, strlen(isp_cmds_list[index].name)) == 0) {
-			cmd_found = index;
-			break;
-		}
-		index++;
-	}
-	if (cmd_found == -1) {
-		printf("Unknown command \"%s\", use -h or --help for a list.\n", cmd);
-		return -2;
-	}
-	if (arg_count != isp_cmds_list[cmd_found].nb_args) {
-		isp_warn_trailing_args(cmd_found, arg_count, args);
-	}
-	ret = isp_cmds_list[cmd_found].handler(arg_count, args);
-
-	return ret;
-}
 
 

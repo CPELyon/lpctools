@@ -26,11 +26,13 @@
 #include <termios.h> /* for serial config */
 #include <ctype.h>
 
+#include <string.h> /* strncmp, strlen */
+
 #include "isp_utils.h"
 #include "isp_commands.h"
 
 #define PROG_NAME "LPC11xx ISP"
-#define VERSION   "0.01"
+#define VERSION   "1.0"
 
 /* short explanation on exit values:
  *
@@ -48,6 +50,9 @@ void help(char *prog_name)
 		"  Default baudrate is B115200\n" \
 		"  <device> is the (host) serial line used to programm the device\n" \
 		"  <command> is one of:\n" \
+		"  \t unlock, write-to-ram, read-memory, prepare-for-write, copy-ram-to-flash, go, erase,\n" \
+		"  \t blank-check, read-part-id, read-boot-version, compare, and read-uid.\n" \
+		"  command specific arguments are as follow:\n" \
 		"  \t unlock \n" \
 		"  \t write-to-ram address file : send 'file' to 'address' in ram\n" \
 		"  \t read-memory address count file : read 'count' bytes from 'address', store then in 'file'\n" \
@@ -85,6 +90,7 @@ void help(char *prog_name)
 
 int trace_on = 0;
 
+int isp_handle_command(char* cmd, int arg_count, char** args);
 
 int main(int argc, char** argv)
 {
@@ -225,5 +231,89 @@ int main(int argc, char** argv)
 	}
 	isp_serial_close();
 	return 0;
+}
+
+struct isp_command {
+	int cmd_num;
+	char* name;
+	int nb_args;
+	int (*handler)(int arg_count, char** args);
+};
+
+
+static struct isp_command isp_cmds_list[] = {
+	{0, "unlock", 0, NULL},
+	{1, "write-to-ram", 2, isp_cmd_write_to_ram},
+	{2, "read-memory", 3, isp_cmd_read_memory},
+	{3, "prepare-for-write", 2, isp_cmd_prepare_for_write},
+	{4, "copy-ram-to-flash", 3, isp_cmd_copy_ram_to_flash},
+	{5, "go", 2, isp_cmd_go},
+	{6, "erase", 2, isp_cmd_erase},
+	{7, "blank-check", 2, isp_cmd_blank_check},
+	{8, "read-part-id", 0, NULL},
+	{9, "read-boot-version", 0, NULL},
+	{10, "compare", 3, isp_cmd_compare},
+	{11, "read-uid", 0, NULL},
+	{-1, NULL, 0, NULL}
+};
+
+void isp_warn_args(int cmd_num, int arg_count, char** args)
+{
+	int i = 0;
+	printf("command \"%s\" needs %d args, got %d.\n",
+			isp_cmds_list[cmd_num].name,
+			isp_cmds_list[cmd_num].nb_args, arg_count);
+	for (i=0; i<arg_count; i++) {
+		printf("\targ[%d] : \"%s\"\n", i, args[i]);
+	}
+}
+
+/* Handle one command
+ * Return positive or NULL value when command handling is OK, or negative value otherwise.
+ */
+int isp_handle_command(char* cmd, int arg_count, char** args)
+{
+	int cmd_found = -1;
+	int ret = 0;
+	int index = 0;
+
+	if (cmd == NULL) {
+		printf("isp_handle_command called with no command !\n");
+		return -1;
+	}
+
+	while ((cmd_found == -1) && (isp_cmds_list[index].name != NULL)) {
+		if (strncmp(isp_cmds_list[index].name, cmd, strlen(isp_cmds_list[index].name)) == 0) {
+			cmd_found = index;
+			break;
+		}
+		index++;
+	}
+	if (cmd_found == -1) {
+		printf("Unknown command \"%s\", use -h or --help for a list.\n", cmd);
+		return -2;
+	}
+	if (arg_count != isp_cmds_list[cmd_found].nb_args) {
+		isp_warn_args(cmd_found, arg_count, args);
+	}
+
+	switch (isp_cmds_list[cmd_found].cmd_num) {
+		case 0: /* unlock */
+			ret = isp_cmd_unlock(0);
+			break;
+		case 8: /* read-part-id */
+			ret = isp_cmd_part_id(0);
+			break;
+		case 9: /* read-boot-version */
+			ret = isp_cmd_boot_version();
+			break;
+		case 11: /* read-uid */
+			ret = isp_cmd_read_uid();
+			break;
+		default:
+			ret = isp_cmds_list[cmd_found].handler(arg_count, args);
+	}
+
+	return ret;
 }
 
