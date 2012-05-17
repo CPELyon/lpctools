@@ -45,7 +45,7 @@ void help(char *prog_name)
 		"  Default oscilator frequency used is 10000 KHz\n" \
 		"  <serial_device> is the (host) serial line used to programm the device\n" \
 		"  <command> is one of:\n" \
-		"  \t dump, flash, sync, id, blank, go\n" \
+		"  \t dump, flash, id, blank, go\n" \
 		"  command specific arguments are:\n" \
 		"  \t dump file : dump flash content to 'file'\n" \
 		"  \t flash file : put 'file' to flash, erasing requiered sectors\n" \
