@@ -15,11 +15,11 @@
 #include "parts.h"
 
 struct part_desc parts[] = {
-	/*        part info             |        flash            |            ram                  */
-	/*                              |                     nb  |                      buffer     */
-	/*  part_id      part name      | base addr    size  sect | base addr   size    off   size  */
-	{ 0x2540102B, "LPC1114FHN33/302", 0x00000000, 0x8000, 8,    0x10000000, 0x2000, 0x800, 0x400 },
-	{0, NULL, 0, 0, 0, 0, 0, 0, 0},
+	/*        part info             |        flash            | reset  |            ram                  */
+	/*                              |                     nb  | vector |                      buffer     */
+	/*  part_id      part name      | base addr    size  sect | offset | base addr   size    off   size  */
+	{ 0x2540102B, "LPC1114FHN33/302", 0x00000000, 0x8000, 8,    0x04,    0x10000000, 0x2000, 0x800, 0x400 },
+	{0, NULL, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
 

@@ -22,6 +22,7 @@ struct part_desc {
 	uint32_t flash_base;
 	uint32_t flash_size;
 	uint32_t flash_nb_sectors;
+	uint32_t reset_vector_offset;
 	/* RAM */
 	uint32_t ram_base;
 	uint32_t ram_size;
