@@ -44,18 +44,28 @@ int get_ids(void)
 
 int dump_to_file(struct part_desc* part, char* filename)
 {
-	int ret = 0;
-	int argc = 3;
-	char* args[3];
-	#define STR_SIZE 15
-	char flash_size[STR_SIZE];
+	int ret = 0, len = 0;
+	char* data;
 
-	args[0] = "0x00000000";
-	snprintf(flash_size, STR_SIZE, "0x%08x", part->flash_size); /* Get count from part ID */
-	args[1] = flash_size;
-	args[2] = filename;
+	/* Allocate buffer */
+	data = malloc(part->flash_size);
+	if (data == NULL) {
+		printf("Unable to allocate read buffer, asked %u.\n", part->flash_size);
+		return -10;
+	}
 
-	isp_cmd_read_memory(argc, args);
+	/* Read data */
+	len = isp_read_memory(data, part->flash_base, part->flash_size);
+	if (len != (int)(part->flash_size)) {
+		printf("Read returned %d bytes instead of %u.\n", len, part->flash_size);
+	}
+
+	/* Write data to file */
+	ret = isp_buff_to_file(data, part->flash_size, filename);
+
+	/* Free memory */
+	free(data);
+
 	return ret;
 }
 
