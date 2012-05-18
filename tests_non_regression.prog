@@ -1,0 +1,8 @@
+./prog
+./prog id
+./prog /dev/ttyUSB1 id
+	Part ID is 0x2540102b
+	UID: 0x0b0b134f - 0x53531b87 - 0x4d3ccb42 - 0xf5000000
+	Boot code version is 1.7
+./prog /dev/ttyUSB1 dump test
+
