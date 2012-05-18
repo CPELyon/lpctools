@@ -4,7 +4,7 @@
  *
  *
  * Written by Nathael Pajani <nathael.pajani@nathael.net>
- * 
+ *
  * This programm is released under the terms of the GNU GPLv3 licence
  * as can be found on the GNU website : <http://www.gnu.org/licenses/>
  *
@@ -190,7 +190,7 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 /* ---- UU_Encoding utility functions ----------------------------------------------*/
 
 /* This might have been taken from a lib, but I hate lib dependencies, and installing
- *  a full window manager (or MTA or MUA for instance) for two functions is not an 
+ *  a full window manager (or MTA or MUA for instance) for two functions is not an
  *  option */
 #define UUENCODE_ADDED_VAL 32
 #define LINE_DATA_LENGTH_MAX 45
