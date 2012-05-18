@@ -4,7 +4,7 @@
  *
  *
  * Written by Nathael Pajani <nathael.pajani@nathael.net>
- * 
+ *
  * This programm is released under the terms of the GNU GPLv3 licence
  * as can be found on the GNU website : <http://www.gnu.org/licenses/>
  *
