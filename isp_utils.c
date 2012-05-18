@@ -117,7 +117,7 @@ int isp_serial_open(int baudrate, char* serial_device)
 	cfsetospeed(&tio, baudrate);
 	cfsetispeed(&tio, baudrate);
 	tcsetattr(serial_fd, TCSANOW, &tio);
-	
+
 	return 0;
 }
 
@@ -151,7 +151,7 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 	int nb = 0;
 	unsigned int count = 0;
 	unsigned int loops = 0; /* Used to create a timeout */
-	
+
 	if (min_read > buf_size) {
 		printf("serial_read: buffer too small for min read value.\n");
 		return -3;
@@ -175,7 +175,7 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 		}
 		if (trace_on == 2) {
 			isp_dump((unsigned char*)(&buf[count]), nb);
-		}	
+		}
 		count += nb;
 	} while (count < min_read);
 
@@ -204,19 +204,19 @@ int isp_uu_encode(char* dest, char* src, unsigned int orig_size)
 	while (pos < orig_size) {
 		unsigned int line_length = orig_size - pos;
 		unsigned int i = 0;
-		
+
 		/* Start with line length */
 		if (line_length > LINE_DATA_LENGTH_MAX) {
 			line_length = LINE_DATA_LENGTH_MAX;
 		}
 		dest[new_size] = line_length + UUENCODE_ADDED_VAL;
 		new_size++;
-		
+
 		/* Encode line */
 		while (i < line_length) {
 			uint32_t int_triplet = 0;
 			int j = 0;
-			
+
 			/* Get original triplet (three bytes) */
 			for (j=0; j<3; j++) {
 				int_triplet |= ((src[pos + i + j] & 0xFF) << (8 * (2 - j)));
@@ -284,7 +284,7 @@ int isp_uu_decode(char* dest, char* src, unsigned int orig_size)
 				}
 			}
 		}
-		
+
 		/* Find next line */
 		while ((src[pos] < UUENCODE_ADDED_VAL) && (pos < orig_size))   {
 			pos++;
