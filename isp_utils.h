@@ -37,10 +37,12 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read);
 
 
 /* ---- UU_Encoding utility functions ----------------------------------------------*/
-
-/* FIXME : This is a place-holder forr uuencode and uudecode functions !!! */
 int isp_uu_encode(char* dest, char* src, unsigned int orig_size);
 
 int isp_uu_decode(char* dest, char* src, unsigned int orig_size);
+
+
+/* ---- File utility functions ----------------------------------------------*/
+int isp_buff_to_file(char* data, unsigned int len, char* filename);
 
 #endif /* ISP_UTILS_H */

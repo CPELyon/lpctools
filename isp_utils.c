@@ -27,6 +27,8 @@
 #include <ctype.h>
 
 
+#define FILE_CREATE_MODE (S_IRUSR | S_IWUSR | S_IRGRP)
+
 extern int trace_on;
 
 /* display data as in hexdump -C :
@@ -291,3 +293,40 @@ int isp_uu_decode(char* dest, char* src, unsigned int orig_size)
 	return new_size;
 }
 
+
+
+/* ---- File utility functions ----------------------------------------------*/
+
+int isp_buff_to_file(char* data, unsigned int len, char* filename)
+{
+	int ret = 0;
+	int out_fd = -1;
+
+	/* Open file for writing if output is not stdout */
+	if (strncmp(filename, "-", strlen(filename)) == 0) {
+		out_fd = STDOUT_FILENO;
+	} else {
+		out_fd = open(filename, (O_WRONLY | O_CREAT | O_TRUNC), FILE_CREATE_MODE);
+		if (out_fd <= 0) {
+			perror("Unable to open or create file for writing");
+			printf("Tried to open \"%s\".\n", filename);
+			return -1;
+		}
+	}
+
+	/* Write data to file */
+	ret = write(out_fd, data, len);
+	if (ret != (int)len) {
+		perror("File write error");
+		printf("Unable to write %u bytes of data to file \"%s\", returned %d !",
+				len, filename, ret);
+		ret = -2;
+	}
+
+	/* Close file */
+	if (out_fd != STDOUT_FILENO) {
+		close(out_fd);
+	}
+
+	return ret;
+}
