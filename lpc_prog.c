@@ -318,7 +318,7 @@ static int prog_handle_command(char* cmd, int dev_id, int arg_count, char** args
 			break;
 
 		case 4: /* go : no args */
-			ret = start_prog();
+			ret = start_prog(part);
 			break;
 	}
 

@@ -74,12 +74,39 @@ int erase_flash(struct part_desc* part)
 {
 	int ret = 0;
 
+
 	return ret;
 }
 
-int start_prog(void)
+int start_prog(struct part_desc* part)
 {
-	int ret = 0;
+	int ret = 0, len = 0;
+	uint32_t addr = 0;
+
+	len = isp_read_memory((char*)&addr, (part->flash_base + part->reset_vector_offset), sizeof(addr));
+	if (len != sizeof(addr)) {
+		printf("Unable to read reset address from flash.\n");
+		return len;
+	}
+	/* FIXME : the following value (0x200) may be LPC111x specific */
+	if (addr < 0x200) {
+		printf("Actual reset address is 0x%08x, which is under the lowest allowed address of 0x200.\n", addr);
+	}
+	/* Unlock device */
+	ret = isp_cmd_unlock(1);
+	if (ret != 0) {
+		printf("Unable to unlock device, aborting.\n");
+		return -1;
+	}
+	/* Read address in thumb or arm mode ? */
+	if (addr & 0x01) {
+		addr &= ~1UL;
+		ret = isp_send_cmd_go(addr, 'T');
+	} else {
+		ret = isp_send_cmd_go(addr, 'A');
+	}
+
+	/* FIXME : start terminal */
 
 	return ret;
 }

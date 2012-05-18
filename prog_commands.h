@@ -23,7 +23,7 @@ int flash_target(struct part_desc* part, char* filename, int check);
 
 int get_ids(void);
 
-int start_prog(void);
+int start_prog(struct part_desc* part);
 
 
 #endif /* ISP_CMDS_FLASH_H */
