@@ -314,7 +314,7 @@ int isp_cmd_sectors_skel(int arg_count, char** args, char* name, char cmd)
 		printf("%s command called for sectors %lu to %lu.\n", name, first_sector, last_sector);
 	}
 
-	ret = isp_send_cmd_sectors(name, cmd, first_sector, last_sector);
+	ret = isp_send_cmd_sectors(name, cmd, first_sector, last_sector, 0);
 
 	return ret;
 }

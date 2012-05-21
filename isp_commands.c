@@ -611,7 +611,7 @@ int isp_send_cmd_go(uint32_t addr, char mode)
 	return 0;
 }
 
-int isp_send_cmd_sectors(char* name, char cmd, int first_sector, int last_sector)
+int isp_send_cmd_sectors(char* name, char cmd, int first_sector, int last_sector, int quiet)
 {
 	char buf[SERIAL_BUFSIZE];
 	int ret = 0, len = 0;
@@ -638,7 +638,7 @@ int isp_send_cmd_sectors(char* name, char cmd, int first_sector, int last_sector
 		printf("Error reading %s result.\n", name);
 		return -4;
 	}
-	ret = isp_ret_code(buf, NULL, 0);
+	ret = isp_ret_code(buf, NULL, quiet);
 
 	return ret;
 }

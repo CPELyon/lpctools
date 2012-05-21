@@ -50,7 +50,7 @@ int isp_connect(unsigned int crystal_freq, int quiet);
 int isp_send_cmd_no_args(char* cmd_name, char* cmd, int quiet);
 int isp_send_cmd_two_args(char* cmd_name, char cmd, unsigned int arg1, unsigned int arg2);
 int isp_send_cmd_address(char cmd, uint32_t addr1, uint32_t addr2, uint32_t length, char* name);
-int isp_send_cmd_sectors(char* name, char cmd, int first_sector, int last_sector);
+int isp_send_cmd_sectors(char* name, char cmd, int first_sector, int last_sector, int quiet);
 
 
 int isp_cmd_unlock(int quiet);
