@@ -172,7 +172,7 @@ static unsigned int calc_write_size(unsigned int sector_size, unsigned int ram_b
 	return write_size;
 }
 
-int flash_target(struct part_desc* part, char* filename, int check)
+int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 {
 	int ret = 0;
 	char* data = NULL;
@@ -181,6 +181,8 @@ int flash_target(struct part_desc* part, char* filename, int check)
 	unsigned int write_size = 0;
 	unsigned int sector_size = (part->flash_size / part->flash_nb_sectors);
 	uint32_t ram_addr = (part->ram_base + part->ram_buff_offset);
+	uint32_t* v = NULL; /* Used for checksum computing */
+	uint32_t cksum = 0;
 
 	/**  Sanity checks  *********************************/
 	/* RAM buffer address within RAM */
@@ -216,6 +218,18 @@ int flash_target(struct part_desc* part, char* filename, int check)
 	}
 	/* Fill unused buffer with 0's so we can flash blocks of data of "write_size" */
 	memset(&data[size], 0, (part->flash_size - size));
+	/* And check checksum of first 7 vectors if asked, according to section 21.3.3 of
+	 * LPC11xx user's manual (UM10398) */
+	v = (uint32_t *)data;
+	cksum = 0 - v[0] - v[1] - v[2] - v[3] - v[4] - v[5] - v[6];
+	if (calc_user_code == 1) {
+		v[7] = cksum;
+	} else if (cksum != v[7]) {
+		printf("Checksum is 0x%08x, should be 0x%08x\n", cksum, v[7]);
+		free(data);
+		return -5;
+	}
+	printf("Checksum check OK\n");
 
 	blocks = (size / write_size) + ((size % write_size) ? 1 : 0);
 	/* Gonna write out of flash ? */
@@ -256,12 +270,6 @@ int flash_target(struct part_desc* part, char* filename, int check)
 			free(data);
 			return ret;
 		}
-	}
-
-	/* And check if asked */
-	if (check == 1) {
-		free(data);
-		return 0;
 	}
 
 	free(data);
