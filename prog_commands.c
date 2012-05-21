@@ -199,20 +199,20 @@ int flash_target(struct part_desc* part, char* filename, int check)
 	ret = erase_flash(part);
 	if (ret != 0) {
 		printf("Unable to erase device, aborting.\n");
-		return -4;
+		return -3;
 	}
 
 	/* Allocate a buffer as big as the flash */
 	data = malloc(part->flash_size);
 	if (data == NULL) {
 		printf("Unable to get a buffer to load the image!");
-		return -5;
+		return -4;
 	}
 	/* And fill the buffer with the image */
 	size = isp_file_to_buff(data, part->flash_size, filename);
 	if (size <= 0){
 		free(data);
-		return -6;
+		return -5;
 	}
 	/* Fill unused buffer with 0's so we can flash blocks of data of "write_size" */
 	memset(&data[size], 0, (part->flash_size - size));
@@ -224,7 +224,7 @@ int flash_target(struct part_desc* part, char* filename, int check)
 		printf("Flash size : %d, trying to flash %d blocks of %d bytes : %d\n",
 				part->flash_size, blocks, write_size, (blocks * write_size));
 		free(data);
-		return -3;
+		return -6;
 	}
 	printf("Flash size : %d, trying to flash %d blocks of %d bytes : %d\n",
 			part->flash_size, blocks, write_size, (blocks * write_size));
