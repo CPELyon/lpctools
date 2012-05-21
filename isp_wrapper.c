@@ -99,7 +99,6 @@ int isp_cmd_write_to_ram(int arg_count, char** args)
 	/* Arguments */
 	unsigned long int addr = 0;
 	char* in_file_name = NULL;
-	int in_fd = -1;
 	char file_buff[RAM_MAX_SIZE];
 	unsigned int bytes_read = 0;
 	int ret = 0;
@@ -119,40 +118,12 @@ int isp_cmd_write_to_ram(int arg_count, char** args)
 	}
 	in_file_name = args[1];
 
-	/* Open file for reading if input is not stdin */
-	if (strncmp(in_file_name, "-", strlen(in_file_name)) == 0) {
-		/* FIXME : set as non blocking ? */
-		in_fd = STDIN_FILENO;
-	} else {
-		in_fd = open(in_file_name, O_RDONLY | O_NONBLOCK);
-		if (in_fd <= 0) {
-			perror("Unable to open file for reading");
-			printf("Tried to open \"%s\".\n", in_file_name);
-			return -13;
-		}
+	/* Read data */
+	bytes_read = isp_file_to_buff(file_buff, RAM_MAX_SIZE, in_file_name);
+	if (bytes_read <= 0){
+		return -13;
 	}
-	/* Read file content */
-	do {
-		int nb = read(in_fd, &file_buff[bytes_read], (RAM_MAX_SIZE - bytes_read));
-		if (nb < 0) {
-			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-				usleep( 50 );
-				continue;
-			}
-			perror("Input file read error");
-			if (in_fd != STDIN_FILENO) {
-				close(in_fd);
-			}
-			return -12;
-		} else if (nb == 0) {
-			/* End of file */
-			break;
-		}
-		bytes_read += nb;
-	} while (bytes_read < RAM_MAX_SIZE);
-	if (in_fd != STDIN_FILENO) {
-		close(in_fd);
-	}
+
 	if (trace_on) {
 		printf("Read %d octet(s) from input file\n", bytes_read);
 	}

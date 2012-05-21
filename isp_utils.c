@@ -330,3 +330,49 @@ int isp_buff_to_file(char* data, unsigned int len, char* filename)
 
 	return ret;
 }
+
+int isp_file_to_buff(char* data, unsigned int len, char* filename)
+{
+	int in_fd = -1;
+	unsigned int bytes_read = 0;
+
+	/* Open file for reading if input is not stdin */
+	if (strncmp(filename, "-", strlen(filename)) == 0) {
+		/* FIXME : set as non blocking ? */
+		in_fd = STDIN_FILENO;
+	} else {
+		in_fd = open(filename, O_RDONLY | O_NONBLOCK);
+		if (in_fd <= 0) {
+			perror("Unable to open file for reading");
+            printf("Tried to open \"%s\".\n", filename);
+            return -13;
+        }
+    }
+
+    /* Read file content */
+    do {
+        int nb = read(in_fd, &data[bytes_read], (len - bytes_read));
+        if (nb < 0) {
+            if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                usleep( 50 );
+                continue;
+            }
+            perror("Input file read error");
+            if (in_fd != STDIN_FILENO) {
+                close(in_fd);
+            }
+            return -12;
+        } else if (nb == 0) {
+            /* End of file */
+            break;
+        }
+        bytes_read += nb;
+    } while (bytes_read < len);
+
+    if (in_fd != STDIN_FILENO) {
+        close(in_fd);
+    }
+
+	return bytes_read;
+}
+

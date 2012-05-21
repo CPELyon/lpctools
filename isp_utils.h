@@ -45,4 +45,6 @@ int isp_uu_decode(char* dest, char* src, unsigned int orig_size);
 /* ---- File utility functions ----------------------------------------------*/
 int isp_buff_to_file(char* data, unsigned int len, char* filename);
 
+int isp_file_to_buff(char* data, unsigned int len, char* filename);
+
 #endif /* ISP_UTILS_H */
