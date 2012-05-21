@@ -27,6 +27,8 @@
 #include "isp_commands.h"
 #include "parts.h"
 
+#define REP_BUFSIZE 40
+
 extern int trace_on;
 
 
@@ -73,9 +75,46 @@ int dump_to_file(struct part_desc* part, char* filename)
 int erase_flash(struct part_desc* part)
 {
 	int ret = 0;
+	int i = 0;
 
+	/* Unlock device */
+	ret = isp_cmd_unlock(1);
+	if (ret != 0) {
+		printf("Unable to unlock device, aborting.\n");
+		return -1;
+	}
 
-	return ret;
+	for (i=0; i<(int)(part->flash_nb_sectors); i++) {
+		ret = isp_send_cmd_sectors("blank-check", 'I', i, i, 1);
+		if (ret == CMD_SUCCESS) {
+			/* sector already blank, preserve the flash, skip to next one :) */
+			continue;
+		}
+		if (ret < 0) {
+			/* Error ? */
+			printf("Initial blank check error (%d) at sector %d!\n", ret, i);
+			return ret;
+		} else {
+			/* Controller replyed with first non blank offset and data, remove it from buffer */
+			char buf[REP_BUFSIZE];
+			usleep( 2000 );
+			isp_serial_read(buf, REP_BUFSIZE, 3);
+		}
+		/* Sector not blank, perform erase */
+		ret = isp_send_cmd_sectors("prepare-for-write", 'P', i, i, 1);
+		if (ret != 0) {
+			printf("Error (%d) when trying to prepare sector %d for erase operation!\n", ret, i);
+			return ret;
+		}
+		ret = isp_send_cmd_sectors("erase", 'E', i, i, 1);
+		if (ret != 0) {
+			printf("Error (%d) when trying to erase sector %d!\n", ret, i);
+			return ret;
+		}
+	}
+	printf("Flash now all blank.\n");
+
+	return 0;
 }
 
 int start_prog(struct part_desc* part)
