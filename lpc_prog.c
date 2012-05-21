@@ -100,7 +100,7 @@ int main(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "sb:thv", long_options, &option_index);
+		c = getopt_long(argc, argv, "sb:tfuhv", long_options, &option_index);
 
 		/* no more options to parse */
 		if (c == -1) break;
