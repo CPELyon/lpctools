@@ -55,7 +55,6 @@ void help(char *prog_name)
 		"  Available options:\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (Same baudrate must be used across whole session)\n" \
 		"  \t -t | --trace : turn on trace output of serial communication\n" \
-		"  \t -w | --wipe : erase whole flash before programm operation (no effect with other commands)\n" \
 		"  \t -f | --freq=N : Oscilator frequency of target device\n" \
 		"  \t -u | --user-code : compute a valid user code for exception vector 7\n" \
 		"  \t -h | --help : display this help\n" \
@@ -67,7 +66,6 @@ void help(char *prog_name)
 
 int trace_on = 0;
 int quiet = 0;
-static int wipe = 0;
 static int calc_user_code = 0;
 
 static int prog_connect_and_id(int freq);
@@ -95,7 +93,6 @@ int main(int argc, char** argv)
 			{"synchronized", no_argument, 0, 's'},
 			{"baudrate", required_argument, 0, 'b'},
 			{"trace", no_argument, 0, 't'},
-			{"wipe", no_argument, 0, 'w'},
 			{"freq", required_argument, 0, 'f'},
 			{"user-code", no_argument, 0, 'u'},
 			{"help", no_argument, 0, 'h'},
@@ -118,11 +115,6 @@ int main(int argc, char** argv)
 			/* t, trace */
 			case 't':
 				trace_on = 1;
-				break;
-
-			/* w, wipe */
-			case 'w':
-				wipe = 1;
 				break;
 
 			/* f, freq */
@@ -299,12 +291,6 @@ static int prog_handle_command(char* cmd, int dev_id, int arg_count, char** args
 			if (arg_count != 1) {
 				printf("command flash needs one arg (filename), got %d.\n", arg_count);
 				return -4;
-			}
-			if (wipe == 1) {
-				ret = erase_flash(part);
-				if (ret < 0) {
-					return ret;
-				}
 			}
 			ret = flash_target(part, args[0], calc_user_code);
 			break;
