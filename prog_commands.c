@@ -14,7 +14,7 @@
 #include <stdio.h> /* printf, snprintf */
 #include <stdint.h>
 #include <unistd.h>
-#include <string.h> /* strncmp */
+#include <string.h> /* strncmp, memset */
 #include <ctype.h>
 #include <errno.h>
 
@@ -151,10 +151,120 @@ int start_prog(struct part_desc* part)
 }
 
 
+static unsigned int calc_write_size(unsigned int sector_size, unsigned int ram_buff_size)
+{
+	unsigned int write_size = 0;
+
+	write_size = ((sector_size < ram_buff_size) ? sector_size : ram_buff_size);
+	/* According to section 21.5.7 of LPC11xx user's manual (UM10398), number of bytes
+	 * written should be 256 | 512 | 1024 | 4096 */
+	if (write_size >= 4096) {
+		write_size = 4096;
+	} else if (write_size >= 1024) {
+		write_size = 1024;
+	} else if (write_size >= 512) {
+		write_size = 512;
+	} else if (write_size >= 256) {
+		write_size = 256;
+	} else {
+		write_size = 0;
+	}
+	return write_size;
+}
+
 int flash_target(struct part_desc* part, char* filename, int check)
 {
 	int ret = 0;
+	char* data = NULL;
+	int size = 0;
+	int i = 0, blocks = 0;
+	unsigned int write_size = 0;
+	unsigned int sector_size = (part->flash_size / part->flash_nb_sectors);
+	uint32_t ram_addr = (part->ram_base + part->ram_buff_offset);
 
+	/**  Sanity checks  *********************************/
+	/* RAM buffer address within RAM */
+	if (ram_addr > (part->ram_base + part->ram_size)) {
+		printf("Invalid configuration, asked to use buffer out of RAM, aborting.\n");
+		return -1;
+	}
+	/* Calc write block size */
+	write_size = calc_write_size(sector_size, part->ram_buff_size);
+	if (write_size == 0) {
+		printf("Config error, I cannot flash using blocks of nul size !\nAborted.\n");
+		return -2;
+	}
+
+	/* Just make sure flash is erased */
+	ret = erase_flash(part);
+	if (ret != 0) {
+		printf("Unable to erase device, aborting.\n");
+		return -4;
+	}
+
+	/* Allocate a buffer as big as the flash */
+	data = malloc(part->flash_size);
+	if (data == NULL) {
+		printf("Unable to get a buffer to load the image!");
+		return -5;
+	}
+	/* And fill the buffer with the image */
+	size = isp_file_to_buff(data, part->flash_size, filename);
+	if (size <= 0){
+		free(data);
+		return -6;
+	}
+	/* Fill unused buffer with 0's so we can flash blocks of data of "write_size" */
+	memset(&data[size], 0, (part->flash_size - size));
+
+	blocks = (size / write_size) + ((size % write_size) ? 1 : 0);
+	/* Gonna write out of flash ? */
+	if ((blocks * write_size) > part->flash_size) {
+		printf("Config error, I cannot flash beyond end of flash !\n");
+		printf("Flash size : %d, trying to flash %d blocks of %d bytes : %d\n",
+				part->flash_size, blocks, write_size, (blocks * write_size));
+		free(data);
+		return -3;
+	}
+	printf("Flash size : %d, trying to flash %d blocks of %d bytes : %d\n",
+			part->flash_size, blocks, write_size, (blocks * write_size));
+
+	/* Now flash the device */
+	printf("Writing started, %d blocks of %d bytes ...\n", blocks, write_size);
+	for (i=0; i<blocks; i++) {
+		unsigned int current_sector = (i * write_size) / sector_size;
+		uint32_t flash_addr = part->flash_base + (i * write_size);
+		/* Prepare sector for writting (must be done before each write) */
+		ret = isp_send_cmd_sectors("prepare-for-write", 'P', current_sector, current_sector, 1);
+		if (ret != 0) {
+			printf("Error (%d) when trying to prepare sector %d for erase operation!\n", ret, i);
+			free(data);
+			return ret;
+		}
+		/* Send data to RAM */
+		ret = isp_send_buf_to_ram(&data[i * write_size], ram_addr, write_size);
+		if (ret != 0) {
+			printf("Unable to perform write-to-ram operation for block %d (block size: %d)\n",
+					i, write_size);
+			free(data);
+			return ret;
+		}
+		/* Copy from RAM to FLASH */
+		ret = isp_send_cmd_address('C', flash_addr, ram_addr, write_size, "write_to_ram");
+		if (ret != 0) {
+			printf("Unable to copy data to flash for block %d (block size: %d)\n", i, write_size);
+			free(data);
+			return ret;
+		}
+	}
+
+	/* And check if asked */
+	if (check == 1) {
+		free(data);
+		return 0;
+	}
+
+	free(data);
 	return ret;
 }
 
