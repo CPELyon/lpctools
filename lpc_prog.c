@@ -241,7 +241,8 @@ static int prog_connect_and_id(int freq)
 	sync_ret = isp_connect(freq, 1);
 	/* Synchro failed or already synchronised ? */
 	if (sync_ret < 0) {
-		/* If already synchronized, then sync command and the next command fail */
+		/* If already synchronized, then sync command and the next command fail.
+		   Sync failed, maybe we are already sync'ed, then send one command for nothing */
 		isp_cmd_part_id(1);
 	}
 
