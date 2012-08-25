@@ -143,6 +143,41 @@ int isp_serial_write(const char* buf, unsigned int buf_size)
 	return nb;
 }
 
+static char next_read_char = 0;
+void isp_serial_empty_buffer()
+{
+	int nb = 0;
+	char unused = 0;
+	unsigned int loops = 0; /* Used to create a timeout */
+
+	do {
+		nb = read(serial_fd, &unused, 1);
+		if (nb < 0) {
+			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+				if (loops++ > 100) {
+					break; /* timeout at 500ms */
+				}
+				usleep( 5000 );
+				continue;
+			}
+			perror("Serial read error");
+			return;
+		} else if (nb == 0) {
+			printf("serial_read: end of file !!!!\n");
+			return;
+		}
+	} while ((unused != '\r') && (unused != '\n'));
+
+	/* This should be improved by reading ALL \r and \n */
+	if (unused == '\r') {
+		nb = read(serial_fd, &unused, 1);
+	}
+	if (unused == '\n') {
+		return;
+	}
+	next_read_char = unused;
+}
+
 /* Try to read at least "min_read" characters from the serial line.
  * Returns -1 on error, 0 on end of file, or read count otherwise.
  */
@@ -155,6 +190,10 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
 	if (min_read > buf_size) {
 		printf("serial_read: buffer too small for min read value.\n");
 		return -3;
+	}
+	if (next_read_char != 0) {
+		buf[count++] = next_read_char;
+		next_read_char = 0;
 	}
 
 	do {

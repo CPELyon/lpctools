@@ -30,6 +30,7 @@ void isp_serial_close(void);
 /* Simple write() wrapper, with trace if enabled */
 int isp_serial_write(const char* buf, unsigned int buf_size);
 
+void isp_serial_empty_buffer();
 /* Try to read at least "min_read" characters from the serial line.
  * Returns -1 on error, 0 on end of file, or read count otherwise.
  */

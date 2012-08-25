@@ -126,7 +126,7 @@ int isp_connect(unsigned int crystal_freq, int quiet)
 		return -3;
 	}
 	/* Empty read buffer (echo is on) */
-	isp_serial_read(buf, strlen(SYNCHRO), strlen(SYNCHRO));
+	isp_serial_empty_buffer();
 	/* Read reply (OK) */
 	isp_serial_read(buf, REP_BUFSIZE, strlen(SYNCHRO_OK));
 	if (strncmp(SYNCHRO_OK, buf, strlen(SYNCHRO_OK)) != 0) {
@@ -137,7 +137,7 @@ int isp_connect(unsigned int crystal_freq, int quiet)
 	/* Documentation says we should send crystal frequency .. sending anything is OK */
 	isp_serial_write(freq, strlen(freq));
 	/* Empty read buffer (echo is on) */
-	isp_serial_read(buf, strlen(freq), strlen(freq));
+	isp_serial_empty_buffer();
 	/* Read reply (OK) */
 	isp_serial_read(buf, REP_BUFSIZE, strlen(SYNCHRO_OK));
 	if (strncmp(SYNCHRO_OK, buf, strlen(SYNCHRO_OK)) != 0) {
@@ -148,7 +148,7 @@ int isp_connect(unsigned int crystal_freq, int quiet)
 	/* Turn off echo */
 	isp_serial_write(SYNCHRO_ECHO_OFF, strlen(SYNCHRO_ECHO_OFF));
 	/* Empty read buffer (echo still on) */
-	isp_serial_read(buf, strlen(SYNCHRO_ECHO_OFF), strlen(SYNCHRO_ECHO_OFF));
+	isp_serial_empty_buffer();
 	/* Read eror code for command */
 	isp_serial_read(buf, REP_BUFSIZE, 3);
 
