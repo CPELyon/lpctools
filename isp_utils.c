@@ -1,6 +1,6 @@
 /*********************************************************************
  *
- *   LPC1114 ISP - Utility functions
+ *   LPC ISP - Utility functions
  *
  *
  * Written by Nathael Pajani <nathael.pajani@nathael.net>

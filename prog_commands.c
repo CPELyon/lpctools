@@ -1,6 +1,6 @@
 /*********************************************************************
  *
- *   LPC1114 ISP Commands for flash tool
+ *   LPC ISP Commands for flash tool
  *
  *
  * Written by Nathael Pajani <nathael.pajani@nathael.net>

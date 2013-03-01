@@ -1,6 +1,9 @@
 /*********************************************************************
  *
- *   LPC1114 ISP
+ *   ISP (In-System Programming) tool for NXP LPC Microcontrollers
+ *
+ * This tool does not give access to each isp command, instead it
+ * provides wrappers for flashing a device.
  *
  *
  * Written by Nathael Pajani <nathael.pajani@nathael.net>

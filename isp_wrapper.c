@@ -1,6 +1,6 @@
 /*********************************************************************
  *
- *   LPC1114 ISP Commands
+ *   LPC ISP Commands
  *
  *
  * Written by Nathael Pajani <nathael.pajani@nathael.net>
