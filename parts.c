@@ -19,6 +19,7 @@ struct part_desc parts[] = {
 	/*                              |                      nb  | vector |                      buffer     */
 	/*  part_id      part name      | base addr    size   sect | offset | base addr   size    off   size  */
 	{ 0x2540102B, "LPC1114FHN33/302", 0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x2000, 0x800, 0x400 },
+	{ 0x3640C02B, "LPC1224FBD48/101", 0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x1000, 0x800, 0x400 },
 	{ 0x26011922, "LPC1764FBD100",    0x00000000, 0x10000, 16,   0x04,    0x10000000, 0x4000, 0x800, 0x800 },
 	{0, NULL, 0, 0, 0, 0, 0, 0, 0, 0},
 };
