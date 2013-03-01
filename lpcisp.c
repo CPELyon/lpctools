@@ -33,7 +33,7 @@
 #include "isp_utils.h"
 #include "isp_commands.h"
 
-#define PROG_NAME "LPC11xx ISP"
+#define PROG_NAME "LPC ISP"
 #define VERSION   "1.0"
 
 /* short explanation on exit values:
