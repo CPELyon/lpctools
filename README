@@ -1,0 +1,34 @@
+LPCTools is an interface to NXP LPC Microcontrollers ISP (In-System
+Programming) serial interface.
+
+It is split in two programms: lpcisp and lpcprog
+
+* lpcisp:
+This tool gives access to each of the usefull isp commands on LPC
+devices. It does not provide wrappers for flashing a device.
+
+* lpcprog:
+This tool does not give access to each isp command, instead it
+provides wrappers for flashing a device.
+
+Both programms were originally written by Nathael Pajani
+<nathael.pajani@nathael.net> because existing programms were published
+under non-free licences, did not allow comercial use, or did not
+provide source code.
+
+This programm is released under the terms of the GNU GPLv3 licence
+as can be found on the GNU website : <http://www.gnu.org/licenses/>
+or in the included LICENCE file.
+
+
+********************
+TODO :
+
+Allow reading of parts information in a separate file (modify parts.c)
+to enable easy definition of new parts.
+
+Allow flashing of parts with flash sectors of different sizes (LPC1764
+has 16 small 4k sectors and two big 32k sectors).
+
+Add the definition of all LPC parts ?
+
