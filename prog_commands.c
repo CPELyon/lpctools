@@ -97,7 +97,7 @@ int erase_flash(struct part_desc* part)
 		} else {
 			/* Controller replyed with first non blank offset and data, remove it from buffer */
 			char buf[REP_BUFSIZE];
-			usleep( 2000 );
+			usleep( 5000 ); /* Some devices are slow to scan flash, give them some time */
 			isp_serial_read(buf, REP_BUFSIZE, 3);
 		}
 		/* Sector not blank, perform erase */
