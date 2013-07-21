@@ -29,7 +29,7 @@
 #include <termios.h> /* for serial config */
 #include <ctype.h>
 
-#include <string.h> /* strncmp, strlen */
+#include <string.h> /* strncmp, strlen, strdup */
 
 #include "isp_utils.h"
 #include "isp_commands.h"
@@ -37,25 +37,25 @@
 #include "parts.h"
 
 #define PROG_NAME "LPC ISP Prog tool"
-#define VERSION   "1.00"
+#define VERSION   "1.01"
 
 
 void help(char *prog_name)
 {
 	fprintf(stderr, "---------------- "PROG_NAME" --------------------------------\n");
-	fprintf(stderr, "Usage: %s [options] serial_device command [command arguments]\n" \
+	fprintf(stderr, "Usage: %s -d <dev_name> -c <command> [options] [dump/prog file name]\n" \
 		"  Default baudrate is B115200\n" \
 		"  Default oscilator frequency used is 10000 KHz\n" \
-		"  <serial_device> is the (host) serial line used to programm the device\n" \
 		"  <command> is one of:\n" \
 		"  \t dump, flash, id, blank, go\n" \
-		"  command specific arguments are:\n" \
-		"  \t dump file : dump flash content to 'file'\n" \
-		"  \t flash file : put 'file' to flash, erasing requiered sectors\n" \
+		"  \t dump file_name: dump flash content to 'file'\n" \
+		"  \t flash file_name : put 'file' to flash, erasing requiered sectors\n" \
 		"  \t blank : erase whole flash\n" \
 		"  \t id : get all id information\n" \
 		"  \t go : execute programm from reset handler in thumb mode and open terminal\n" \
 		"  Available options:\n" \
+		"  \t -c | --command=cmd : \n" \
+		"  \t -d | --device=dev_path : Host serial line used to programm the device\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (Same baudrate must be used across whole session)\n" \
 		"  \t -t | --trace : turn on trace output of serial communication\n" \
 		"  \t -f | --freq=N : Oscilator frequency of target device\n" \
@@ -93,7 +93,8 @@ int main(int argc, char** argv)
 		int c = 0;
 
 		struct option long_options[] = {
-			{"synchronized", no_argument, 0, 's'},
+			{"command", required_argument, 0, 'c'},
+			{"device", required_argument, 0, 'd'},
 			{"baudrate", required_argument, 0, 'b'},
 			{"trace", no_argument, 0, 't'},
 			{"freq", required_argument, 0, 'f'},
@@ -103,12 +104,22 @@ int main(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "sb:tf:nhv", long_options, &option_index);
+		c = getopt_long(argc, argv, "c:d:b:tf:nhv", long_options, &option_index);
 
 		/* no more options to parse */
 		if (c == -1) break;
 
 		switch (c) {
+			/* c, command */
+			case 'c':
+				command = strdup(optarg);
+				break;
+
+			/* d, device */
+			case 'd':
+				isp_serial_device = strdup(optarg);
+				break;
+
 			/* b, baudrate */
 			case 'b':
 				baudrate = atoi(optarg);
@@ -144,38 +155,29 @@ int main(int argc, char** argv)
 		}
 	}
 
-	/* Parse remaining command line arguments (not options). */
-
-	/* First one should (must) be serial device */
-	if (optind < argc) {
-		isp_serial_device = argv[optind++];
-		if (trace_on) {
-			printf("Serial device : %s\n", isp_serial_device);
+	/* Command is mandatory */
+	if (command == NULL) {
+		printf("No command given. use -h or --help for help on available commands.\n");
+		return -1;
+	}
 		}
 	}
+	/* Open serial device */
 	if (isp_serial_device == NULL) {
 		printf("No serial device given, exiting\n");
 		help(argv[0]);
 		return 0;
-	}
-	if (isp_serial_open(baudrate, isp_serial_device) != 0) {
+	} else if (isp_serial_open(baudrate, isp_serial_device) != 0) {
 		printf("Serial open failed, unable to initiate serial communication with target.\n");
 		return -1;
 	}
 
-	/* Next one should be "command" (if present) */
-	if (optind < argc) {
-		command = argv[optind++];
-		if (trace_on) {
-			printf("Command : %s\n", command);
-		}
-	} else {
-		printf("No command given. use -h or --help for help on available commands.\n");
-		isp_serial_close();
-		return -1;
+	if (trace_on) {
+		printf("Serial device : %s\n", isp_serial_device);
+		printf("Command : %s\n", command);
 	}
 
-	/* And then remaining ones (if any) are command arguments */
+	/* Parse remaining command line arguments (not options). They are command arguments */
 	if (optind < argc) {
 		nb_cmd_args = argc - optind;
 		cmd_args = malloc(nb_cmd_args * sizeof(char *));
@@ -191,7 +193,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	/* Frist : sync with device */
+	/* First : sync with device */
 	dev_id = prog_connect_and_id(crystal_freq);
 	if (dev_id < 0) {
 		printf("Unable to connect to target, consider hard reset of target or link\n");
