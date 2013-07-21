@@ -1,0 +1,21 @@
+# Parts definition file
+# Lines starting whith # are comments
+# All values but the last one MUST be immediately followed by a coma (',') and can be precedeed by
+#  any number of whitespaces.
+# "part name" must be under 25 characters.
+
+# Line format :
+
+#       part info             |        flash             | reset  |       ram         |    ram
+#                             |                      nb  | vector |                   |   buffer   
+# part_id      part name      | base addr    size   sect | offset | base addr   size  |  off   size 
+
+
+# LPC11XX Familly
+0x2540102B, LPC1114FHN33/302,   0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x2000, 0x800, 0x400
+
+# LPC12XX Familly
+0x3640C02B, LPC1224FBD48/101,   0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x1000, 0x800, 0x400
+
+# LPC17XX Familly
+0x26011922, LPC1764FBD100,      0x00000000, 0x10000, 16,   0x04,    0x10000000, 0x4000, 0x800, 0x800
