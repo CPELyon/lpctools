@@ -31,5 +31,5 @@ parts.o: parts.h
 clean:
 	rm -f *.o
 mrproper: clean
-	rm -f isp
-	rm -f prog
+	rm -f lpcisp
+	rm -f lpcprog
