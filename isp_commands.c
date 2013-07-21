@@ -97,6 +97,7 @@ static int isp_ret_code(char* buf, char** endptr, int quiet)
 
 
 /* Connect or reconnect to the target.
+ * crystal_freq is in KHz
  * Return positive or NULL value when connection is OK, or negative value otherwise.
  */
 int isp_connect(unsigned int crystal_freq, int quiet)
