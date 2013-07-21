@@ -1,8 +1,12 @@
 ./lpcprog
 ./lpcprog id
-./lpcprog /dev/ttyUSB1 id
+./lpcprog -c id
+./lpcprog -d /dev/ttyUSB0 -c id
 	Part ID is 0x2540102b
 	UID: 0x0b0b134f - 0x53531b87 - 0x4d3ccb42 - 0xf5000000
 	Boot code version is 1.7
-./lpcprog /dev/ttyUSB1 dump test
+./lpcprog -d /dev/ttyUSB0 -c toto
+./lpcprog -d /dev/ttyUSB0 -c dump test
+./lpcprog -d /dev/ttyUSB0 -c flash
+./lpcprog -d /dev/ttyUSB0 -c flash mod_gpio.bin
 

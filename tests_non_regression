@@ -1,107 +1,107 @@
-./lpcisp /dev/ttyUSB1 -t -s read-uid sdfsdf ldsfgk
-./lpcisp /dev/ttyUSB1 -t -s read-uid sdfsdf ldsfgk -h
-./lpcisp /dev/ttyUSB1 -t -s
-./lpcisp /dev/ttyUSB1 -t read-uid sdfsdf ldsfg
+./lpcisp /dev/ttyUSB0 -t -s read-uid sdfsdf ldsfgk
+./lpcisp /dev/ttyUSB0 -t -s read-uid sdfsdf ldsfgk -h
+./lpcisp /dev/ttyUSB0 -t -s
+./lpcisp /dev/ttyUSB0 -t read-uid sdfsdf ldsfg
 	UID: 0x0b0b134f - 0x53531b87 - 0x4d3ccb42 - 0xf5000000
-./lpcisp /dev/ttyUSB1 -t echo
-./lpcisp /dev/ttyUSB1 -t erase
-./lpcisp /dev/ttyUSB1 -t read-part-id
+./lpcisp /dev/ttyUSB0 -t echo
+./lpcisp /dev/ttyUSB0 -t erase
+./lpcisp /dev/ttyUSB0 -t read-part-id
 	Part ID is 0x2540102b
-./lpcisp /dev/ttyUSB1 -t read-uid
+./lpcisp /dev/ttyUSB0 -t read-uid
 	UID: 0x0b0b134f - 0x53531b87 - 0x4d3ccb42 - 0xf5000000
-./lpcisp /dev/ttyUSB1 -t read-boot-version
+./lpcisp /dev/ttyUSB0 -t read-boot-version
 	Boot code version is 1.7
-./lpcisp /dev/ttyUSB1 read-boot-version
-./lpcisp /dev/ttyUSB1 read-part-id
-./lpcisp /dev/ttyUSB1 read-uid
-./lpcisp /dev/ttyUSB1 -s
-./lpcisp /dev/ttyUSB1 unlock
-./lpcisp /dev/ttyUSB1 --synchronize
-./lpcisp /dev/ttyUSB1 -t read-memory
-./lpcisp /dev/ttyUSB1 -t read-memory 0x15 1548
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 4
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 40
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 900
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 150
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 160
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 4 -
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 800 -
-./lpcisp /dev/ttyUSB1 read-memory 0x1000 800 -
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 800 dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 805 ../dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 804 ../dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 808 ../dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 1204 ../dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 900 ../dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 1840 ../dump01
-./lpcisp /dev/ttyUSB1 -t read-memory 0x1000 4 ../dump01
-./lpcisp /dev/ttyUSB1 read-memory 0x0000 1800 ../dump01
-./lpcisp /dev/ttyUSB1 read-memory 0x0000 600 ../dump01
-./lpcisp /dev/ttyUSB1 read-memory 0x0000 600 -
-./lpcisp /dev/ttyUSB1 -t unlock
-./lpcisp /dev/ttyUSB1 -t blank-check
-./lpcisp /dev/ttyUSB1 -t blank-check 1 3
-./lpcisp /dev/ttyUSB1 -t blank-check 0 3
-./lpcisp /dev/ttyUSB1 -t blank-check 4 3
-./lpcisp /dev/ttyUSB1 -t blank-check 4 4
-./lpcisp /dev/ttyUSB1 -t blank-check 3 4
-./lpcisp /dev/ttyUSB1 -t blank-check 4 6
-./lpcisp /dev/ttyUSB1 read-memory 0x4000 12 -
-./lpcisp /dev/ttyUSB1 -t blank-check 4 8
-./lpcisp /dev/ttyUSB1 -t blank-check 4 7
-./lpcisp /dev/ttyUSB1 blank-check 4 7
-./lpcisp /dev/ttyUSB1 blank-check 1 1
-./lpcisp /dev/ttyUSB1 read-memory 0x0000 0x4000 - > ../dump_full
-./lpcisp /dev/ttyUSB1 -s
-./lpcisp /dev/ttyUSB1 read-part-id
-./lpcisp /dev/ttyUSB1 read-boot-version
-./lpcisp /dev/ttyUSB1 compare 0x4000 0x5000 60
-./lpcisp /dev/ttyUSB1 compare 0x4000 0x5000 65
-./lpcisp /dev/ttyUSB1 compare 0x4000 0x5000 66
-./lpcisp /dev/ttyUSB1 compare 0x4000 0x5000 68
-./lpcisp /dev/ttyUSB1 compare 0x4000 0x5000 1000
-./lpcisp /dev/ttyUSB1 compare 0x1000 0x5000 1000
-./lpcisp /dev/ttyUSB1 compare 0x1000 0x5000 4
-./lpcisp /dev/ttyUSB1 compare 0x1BB0 0x1C80 4
-./lpcisp /dev/ttyUSB1 compare 0x1BB0 0x1BC8 4
-./lpcisp /dev/ttyUSB1 compare 0x1BB0 0x1C08 4
-./lpcisp /dev/ttyUSB1 go 512 toto
-./lpcisp /dev/ttyUSB1 go 512 arm
-./lpcisp /dev/ttyUSB1 go 512 thumb
-./lpcisp /dev/ttyUSB1 unlock
-./lpcisp /dev/ttyUSB1 go 512 thumb
-./lpcisp /dev/ttyUSB1 read-boot-version
-./lpcisp /dev/ttyUSB1 go 500 thumb
-./lpcisp /dev/ttyUSB1 go 0x5000 thumb
-./lpcisp /dev/ttyUSB1 -s
-./lpcisp /dev/ttyUSB1 read-boot-version
-./lpcisp /dev/ttyUSB1 read-boot-version
-./lpcisp /dev/ttyUSB1 unlock
-./lpcisp /dev/ttyUSB1 compare 0x1BB0 0x1C08 4
-./lpcisp /dev/ttyUSB1 prepare-for-write 6 6
-./lpcisp /dev/ttyUSB1 erase 6 6
-./lpcisp /dev/ttyUSB1 blank-check 6 6
-./lpcisp /dev/ttyUSB1 prepare-for-write 6 6
-./lpcisp /dev/ttyUSB1 copy-ram-to-flash 0x6000 0x10000800 0x400
-./lpcisp /dev/ttyUSB1 prepare-for-write 6 6
-./lpcisp /dev/ttyUSB1 copy-ram-to-flash 0x6400 0x10000C00 0x400
+./lpcisp /dev/ttyUSB0 read-boot-version
+./lpcisp /dev/ttyUSB0 read-part-id
+./lpcisp /dev/ttyUSB0 read-uid
+./lpcisp /dev/ttyUSB0 -s
+./lpcisp /dev/ttyUSB0 unlock
+./lpcisp /dev/ttyUSB0 --synchronize
+./lpcisp /dev/ttyUSB0 -t read-memory
+./lpcisp /dev/ttyUSB0 -t read-memory 0x15 1548
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 4
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 40
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 900
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 150
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 160
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 4 -
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 800 -
+./lpcisp /dev/ttyUSB0 read-memory 0x1000 800 -
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 800 dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 805 ../dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 804 ../dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 808 ../dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 1204 ../dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 900 ../dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 1840 ../dump01
+./lpcisp /dev/ttyUSB0 -t read-memory 0x1000 4 ../dump01
+./lpcisp /dev/ttyUSB0 read-memory 0x0000 1800 ../dump01
+./lpcisp /dev/ttyUSB0 read-memory 0x0000 600 ../dump01
+./lpcisp /dev/ttyUSB0 read-memory 0x0000 600 -
+./lpcisp /dev/ttyUSB0 -t unlock
+./lpcisp /dev/ttyUSB0 -t blank-check
+./lpcisp /dev/ttyUSB0 -t blank-check 1 3
+./lpcisp /dev/ttyUSB0 -t blank-check 0 3
+./lpcisp /dev/ttyUSB0 -t blank-check 4 3
+./lpcisp /dev/ttyUSB0 -t blank-check 4 4
+./lpcisp /dev/ttyUSB0 -t blank-check 3 4
+./lpcisp /dev/ttyUSB0 -t blank-check 4 6
+./lpcisp /dev/ttyUSB0 read-memory 0x4000 12 -
+./lpcisp /dev/ttyUSB0 -t blank-check 4 8
+./lpcisp /dev/ttyUSB0 -t blank-check 4 7
+./lpcisp /dev/ttyUSB0 blank-check 4 7
+./lpcisp /dev/ttyUSB0 blank-check 1 1
+./lpcisp /dev/ttyUSB0 read-memory 0x0000 0x4000 - > ../dump_full
+./lpcisp /dev/ttyUSB0 -s
+./lpcisp /dev/ttyUSB0 read-part-id
+./lpcisp /dev/ttyUSB0 read-boot-version
+./lpcisp /dev/ttyUSB0 compare 0x4000 0x5000 60
+./lpcisp /dev/ttyUSB0 compare 0x4000 0x5000 65
+./lpcisp /dev/ttyUSB0 compare 0x4000 0x5000 66
+./lpcisp /dev/ttyUSB0 compare 0x4000 0x5000 68
+./lpcisp /dev/ttyUSB0 compare 0x4000 0x5000 1000
+./lpcisp /dev/ttyUSB0 compare 0x1000 0x5000 1000
+./lpcisp /dev/ttyUSB0 compare 0x1000 0x5000 4
+./lpcisp /dev/ttyUSB0 compare 0x1BB0 0x1C80 4
+./lpcisp /dev/ttyUSB0 compare 0x1BB0 0x1BC8 4
+./lpcisp /dev/ttyUSB0 compare 0x1BB0 0x1C08 4
+./lpcisp /dev/ttyUSB0 go 512 toto
+./lpcisp /dev/ttyUSB0 go 512 arm
+./lpcisp /dev/ttyUSB0 go 512 thumb
+./lpcisp /dev/ttyUSB0 unlock
+./lpcisp /dev/ttyUSB0 go 512 thumb
+./lpcisp /dev/ttyUSB0 read-boot-version
+./lpcisp /dev/ttyUSB0 go 500 thumb
+./lpcisp /dev/ttyUSB0 go 0x5000 thumb
+./lpcisp /dev/ttyUSB0 -s
+./lpcisp /dev/ttyUSB0 read-boot-version
+./lpcisp /dev/ttyUSB0 read-boot-version
+./lpcisp /dev/ttyUSB0 unlock
+./lpcisp /dev/ttyUSB0 compare 0x1BB0 0x1C08 4
+./lpcisp /dev/ttyUSB0 prepare-for-write 6 6
+./lpcisp /dev/ttyUSB0 erase 6 6
+./lpcisp /dev/ttyUSB0 blank-check 6 6
+./lpcisp /dev/ttyUSB0 prepare-for-write 6 6
+./lpcisp /dev/ttyUSB0 copy-ram-to-flash 0x6000 0x10000800 0x400
+./lpcisp /dev/ttyUSB0 prepare-for-write 6 6
+./lpcisp /dev/ttyUSB0 copy-ram-to-flash 0x6400 0x10000C00 0x400
 
-./lpcisp /dev/ttyUSB1 read-memory 0x10000800 0x800 dumptest_ram
-./lpcisp /dev/ttyUSB1 read-memory 0x6000 0x800 dumptest_flash
+./lpcisp /dev/ttyUSB0 read-memory 0x10000800 0x800 dumptest_ram
+./lpcisp /dev/ttyUSB0 read-memory 0x6000 0x800 dumptest_flash
 diff dumptest_ram dumptest_flash
 
-./lpcisp /dev/ttyUSB1 -s
-./lpcisp /dev/ttyUSB1 unlock
-./lpcisp /dev/ttyUSB1 prepare-for-write 6 6
-./lpcisp /dev/ttyUSB1 erase 6 6
-./lpcisp /dev/ttyUSB1 blank-check 6 6
+./lpcisp /dev/ttyUSB0 -s
+./lpcisp /dev/ttyUSB0 unlock
+./lpcisp /dev/ttyUSB0 prepare-for-write 6 6
+./lpcisp /dev/ttyUSB0 erase 6 6
+./lpcisp /dev/ttyUSB0 blank-check 6 6
 dd if=isp of=src bs=1024 count=1
-./lpcisp /dev/ttyUSB1 write-to-ram 0x10000800 src
-./lpcisp /dev/ttyUSB1 read-memory 0x10000800 0x400 reread
+./lpcisp /dev/ttyUSB0 write-to-ram 0x10000800 src
+./lpcisp /dev/ttyUSB0 read-memory 0x10000800 0x400 reread
 diff src reread
-./lpcisp /dev/ttyUSB1 prepare-for-write 6 6
-./lpcisp /dev/ttyUSB1 copy-ram-to-flash 0x6000 0x10000800 0x400
-./lpcisp /dev/ttyUSB1 read-memory 0x6000 0x400 reread_flash
+./lpcisp /dev/ttyUSB0 prepare-for-write 6 6
+./lpcisp /dev/ttyUSB0 copy-ram-to-flash 0x6000 0x10000800 0x400
+./lpcisp /dev/ttyUSB0 read-memory 0x6000 0x400 reread_flash
 diff reread_flash src
 
 
