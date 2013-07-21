@@ -24,11 +24,9 @@ or in the included LICENCE file.
 ********************
 TODO :
 
-Allow reading of parts information in a separate file (modify parts.c)
-to enable easy definition of new parts.
-
 Allow flashing of parts with flash sectors of different sizes (LPC1764
 has 16 small 4k sectors and two big 32k sectors).
+--> Need to change parts definition format.
 
 Add the definition of all LPC parts ?
 

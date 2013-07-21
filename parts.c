@@ -10,32 +10,96 @@
  *
  *********************************************************************/
 
-#include <stdint.h> /* uint64_t */
+#include <stdint.h> /* uint64_t and uint32_t */
 #include <stdlib.h> /* NULL */
+#include <stddef.h> /* For offsetof */
+#include <stdio.h>  /* perror(), fopen(), fclose() */
+#include <errno.h>
+
 #include "parts.h"
 
-struct part_desc parts[] = {
-	/*        part info             |        flash             | reset  |            ram                  */
-	/*                              |                      nb  | vector |                      buffer     */
-	/*  part_id      part name      | base addr    size   sect | offset | base addr   size    off   size  */
-	{ 0x2540102B, "LPC1114FHN33/302", 0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x2000, 0x800, 0x400 },
-	{ 0x3640C02B, "LPC1224FBD48/101", 0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x1000, 0x800, 0x400 },
-	{ 0x26011922, "LPC1764FBD100",    0x00000000, 0x10000, 16,   0x04,    0x10000000, 0x4000, 0x800, 0x800 },
-	{0, NULL, 0, 0, 0, 0, 0, 0, 0, 0},
-};
+#define CONF_READ_BUF_SIZE 250
 
-
-struct part_desc* find_part(uint64_t dev_id)
+/* When looking for parts description in a file ee do allocate (malloc) two memory
+ *   chunks which we will never free.
+ * The user should free part_desc->name and part_desc when they are no more usefull
+ */
+struct part_desc* find_part_in_file(uint64_t dev_id, char* parts_file_name)
 {
-	int i = 0;
+	FILE* parts_file = NULL;
+	unsigned int i = 0;
+	unsigned int line = 0; /* Store current line number when reading file */
+	struct part_desc* part = malloc(sizeof(struct part_desc));
 
-	while (parts[i].name != NULL) {
-		if (parts[i].part_id == dev_id) {
-			return &parts[i];
-		}
-		i++;
+	parts_file = fopen(parts_file_name, "r");
+	if (parts_file == NULL) {
+		perror("Unable to open file to read LPC descriptions !");
+		return NULL;
 	}
 
+	while (1) {
+		char buf[CONF_READ_BUF_SIZE];
+		char* endp = NULL;
+		uint32_t* part_values = NULL;
+		unsigned int nval = 0;
+
+		if (fgets(buf, CONF_READ_BUF_SIZE, parts_file) == NULL) {
+			printf("Part not found before end of parts description file.\n");
+			goto out_err_1;
+		}
+		line++; /* Store current line number to help parts description file correction */
+		if (buf[0] == '#') {
+			/* skip comments */
+			continue;
+		}
+		part->part_id = strtoul(buf, &endp, 0);
+		if (part->part_id != dev_id) {
+			continue;
+		}
+		printf("Part ID 0x%08x found on line %d\n", (unsigned int)part->part_id, line);
+		/* We found the right part ID, get all the data */
+		part->name = malloc(PART_NAME_LENGTH);
+		/* Part names must start with "LPC" */
+		while ((*endp != '\0') && (*endp != 'L')) {
+			endp++;
+		}
+		/* Copy part name */
+		for (i = 0; i < PART_NAME_LENGTH; i++) {
+			if (endp[i] == '\0') {
+				/* Hey, we need the part description after the name */
+				printf("Malformed parts description file at line %d, nothing after part name.\n", line);
+				goto out_err_2;
+			}
+	 		if (endp[i] == ',') {
+				break;
+			}
+			part->name[i] = endp[i];
+		}
+		if ((i == PART_NAME_LENGTH) && (endp[i] != ',')) {
+			printf("Malformed parts description file at line %d, part name too long.\n", line);
+				goto out_err_2;
+		}
+		endp += i;
+		/* Get all the values */
+		nval = ((sizeof(struct part_desc) - offsetof(struct part_desc, flash_base)) / sizeof(uint32_t));
+		part_values = &(part->flash_base); /* Use a table to read the data, we do not care of what the data is */
+		for (i = 0; i < nval; i++) {
+			part_values[i] = strtoul((endp + 1), &endp, 0);
+			if ((part_values[i] == 0) && (errno == EINVAL)) {
+				printf("Malformed parts description file at line %d, error reading value %d\n", line, i);
+				goto out_err_2;
+			}
+		}
+		/* Done, retrun the part ! */
+		return part;
+	}
+
+
+out_err_2:
+	free(part->name);
+out_err_1:
+	free(part);
+	fclose(parts_file);
 	return NULL;
 }
 

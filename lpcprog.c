@@ -37,13 +37,14 @@
 #include "parts.h"
 
 #define PROG_NAME "LPC ISP Prog tool"
-#define VERSION   "1.01"
+#define VERSION   "1.02"
 
 
 void help(char *prog_name)
 {
 	fprintf(stderr, "---------------- "PROG_NAME" --------------------------------\n");
 	fprintf(stderr, "Usage: %s -d <dev_name> -c <command> [options] [dump/prog file name]\n" \
+		"  Default parts description files are /etc/lpctools_parts.def or ./lpctools_parts.def\n" \
 		"  Default baudrate is B115200\n" \
 		"  Default oscilator frequency used is 10000 KHz\n" \
 		"  <command> is one of:\n" \
@@ -54,6 +55,7 @@ void help(char *prog_name)
 		"  \t id : get all id information\n" \
 		"  \t go : execute programm from reset handler in thumb mode and open terminal\n" \
 		"  Available options:\n" \
+		"  \t -p | --parts=file : Parts description file (see defaults)\n" \
 		"  \t -c | --command=cmd : \n" \
 		"  \t -d | --device=dev_path : Host serial line used to programm the device\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (Same baudrate must be used across whole session)\n" \
@@ -70,6 +72,10 @@ void help(char *prog_name)
 int trace_on = 0;
 int quiet = 0;
 static int calc_user_code = 1; /* User code is computed by default */
+
+char* parts_file_name = NULL;
+#define DEFAULT_PART_FILE_NAME_ETC  "/etc/lpctools_parts.def"
+#define DEFAULT_PART_FILE_NAME_CURRENT  "./lpctools_parts.def"
 
 static int prog_connect_and_id(int freq);
 static int prog_handle_command(char* cmd, int dev_id, int arg_count, char** args);
@@ -93,6 +99,7 @@ int main(int argc, char** argv)
 		int c = 0;
 
 		struct option long_options[] = {
+			{"parts", required_argument, 0, 'p'},
 			{"command", required_argument, 0, 'c'},
 			{"device", required_argument, 0, 'd'},
 			{"baudrate", required_argument, 0, 'b'},
@@ -104,12 +111,17 @@ int main(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "c:d:b:tf:nhv", long_options, &option_index);
+		c = getopt_long(argc, argv, "p:c:d:b:tf:nhv", long_options, &option_index);
 
 		/* no more options to parse */
 		if (c == -1) break;
 
 		switch (c) {
+			/* p, parts description file */
+			case 'p':
+				parts_file_name = strdup(optarg);
+				break;
+
 			/* c, command */
 			case 'c':
 				command = strdup(optarg);
@@ -160,8 +172,24 @@ int main(int argc, char** argv)
 		printf("No command given. use -h or --help for help on available commands.\n");
 		return -1;
 	}
+	/* Check for default parts file availability if none given as argument */
+	if (parts_file_name == NULL) {
+		FILE* parts_file = NULL;
+
+		parts_file_name = DEFAULT_PART_FILE_NAME_ETC;
+		parts_file = fopen(parts_file_name, "r");
+		if (parts_file == NULL) {
+			parts_file_name = DEFAULT_PART_FILE_NAME_CURRENT;
+			parts_file = fopen(parts_file_name, "r");
 		}
+		if (parts_file == NULL) {
+			printf("Unable to open default parts file to read LPC descriptions !\n");
+			printf("Tried : '%s' and '%s'\n", DEFAULT_PART_FILE_NAME_ETC, DEFAULT_PART_FILE_NAME_CURRENT);
+			return -1;
+		}
+		fclose(parts_file);
 	}
+
 	/* Open serial device */
 	if (isp_serial_device == NULL) {
 		printf("No serial device given, exiting\n");
@@ -266,7 +294,7 @@ static int prog_handle_command(char* cmd, int dev_id, int arg_count, char** args
 		return -1;
 	}
 
-	part = find_part(dev_id);
+	part = find_part_in_file(dev_id, parts_file_name);
 	if (part == NULL) {
 		printf("Unknown part number : 0x%08x.\n", dev_id);
 		return -2;
