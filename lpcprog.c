@@ -59,7 +59,7 @@ void help(char *prog_name)
 		"  \t -b | --baudrate=N : Use this baudrate (Same baudrate must be used across whole session)\n" \
 		"  \t -t | --trace : turn on trace output of serial communication\n" \
 		"  \t -f | --freq=N : Oscilator frequency of target device\n" \
-		"  \t -u | --user-code : compute a valid user code for exception vector 7\n" \
+		"  \t -n | --no-user-code : do not compute a valid user code for exception vector 7\n" \
 		"  \t -h | --help : display this help\n" \
 		"  \t -v | --version : display version information\n", prog_name);
 	fprintf(stderr, "-----------------------------------------------------------------------\n");
@@ -69,7 +69,7 @@ void help(char *prog_name)
 
 int trace_on = 0;
 int quiet = 0;
-static int calc_user_code = 0;
+static int calc_user_code = 1; /* User code is computed by default */
 
 static int prog_connect_and_id(int freq);
 static int prog_handle_command(char* cmd, int dev_id, int arg_count, char** args);
@@ -97,13 +97,13 @@ int main(int argc, char** argv)
 			{"baudrate", required_argument, 0, 'b'},
 			{"trace", no_argument, 0, 't'},
 			{"freq", required_argument, 0, 'f'},
-			{"user-code", no_argument, 0, 'u'},
+			{"no-user-code", no_argument, 0, 'n'},
 			{"help", no_argument, 0, 'h'},
 			{"version", no_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "sb:tfuhv", long_options, &option_index);
+		c = getopt_long(argc, argv, "sb:tf:nhv", long_options, &option_index);
 
 		/* no more options to parse */
 		if (c == -1) break;
@@ -126,8 +126,8 @@ int main(int argc, char** argv)
 				break;
 
 			/* u, user-code */
-			case 'u':
-				calc_user_code = 1;
+			case 'n':
+				calc_user_code = 0;
 				break;
 
 			/* v, version */
