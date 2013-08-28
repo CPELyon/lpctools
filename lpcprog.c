@@ -176,10 +176,10 @@ int main(int argc, char** argv)
 	if (parts_file_name == NULL) {
 		FILE* parts_file = NULL;
 
-		parts_file_name = DEFAULT_PART_FILE_NAME_ETC;
+		parts_file_name = DEFAULT_PART_FILE_NAME_CURRENT;
 		parts_file = fopen(parts_file_name, "r");
 		if (parts_file == NULL) {
-			parts_file_name = DEFAULT_PART_FILE_NAME_CURRENT;
+			parts_file_name = DEFAULT_PART_FILE_NAME_ETC;
 			parts_file = fopen(parts_file_name, "r");
 		}
 		if (parts_file == NULL) {
