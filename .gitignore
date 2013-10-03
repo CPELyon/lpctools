@@ -16,4 +16,6 @@
 */objs/*
 *.zip
 *.dump
-
+lpcisp
+lpcprog
+tags
