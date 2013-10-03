@@ -387,19 +387,17 @@ int isp_read_memory(char* data, uint32_t addr, unsigned int count, unsigned int 
 	}
 
 	if (uuencoded == 0) {
-		if (SERIAL_BUFSIZE < count) {
-			printf("Error when trying to read %u bytes of memory, buffer too small.\n", count);
-			printf("Read %d max bytes at a time.\n", SERIAL_BUFSIZE);
-			return -7;
-		}
-		len = isp_serial_read(buf, SERIAL_BUFSIZE, count);
+		len = isp_serial_read(data, count, count);
 		if (len <= 0) {
 			printf("Error reading memory.\n");
 			return -6;
 		}
+		if (len == (int)count) {
+			return len;
+		}
 		/* Wait some time before reading possible remaining data */
 		usleep( 1000 );
-		len += isp_serial_read((buf + len), (SERIAL_BUFSIZE - len), count);
+		len += isp_serial_read((data + len), (count - len), (count - len));
 		if (len < 0) { /* Length may be null, as we may already have received everything */
 			printf("Error reading memory.\n");
 			return -5;
