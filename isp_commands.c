@@ -270,7 +270,7 @@ int isp_cmd_boot_version(void)
 	}
 	ver[0] = strtoul(buf, &tmp, 10);
 	ver[1] = strtoul(tmp, NULL, 10);
-	printf("Boot code version is %u.%u\n", ver[0], ver[1]);
+	printf("Boot code version is %u.%u\n", ver[1], ver[0]);
 
 	return 0;
 }
