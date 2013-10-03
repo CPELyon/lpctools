@@ -83,7 +83,7 @@ int isp_cmd_write_to_ram(int arg_count, char** args);
  * perform write-to-ram operation
  * send 'count' bytes from 'data' to 'addr' in RAM
  */
-int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count);
+int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count, unsigned int perform_uuencode);
 
 
 int isp_cmd_compare(int arg_count, char** args);

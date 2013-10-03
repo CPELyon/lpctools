@@ -166,6 +166,8 @@ static unsigned int calc_write_size(unsigned int sector_size, unsigned int ram_b
 		write_size = 512;
 	} else if (write_size >= 256) {
 		write_size = 256;
+	} else if (write_size >= 64) {
+		write_size = 64;
 	} else {
 		write_size = 0;
 	}
@@ -181,6 +183,7 @@ int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 	unsigned int write_size = 0;
 	unsigned int sector_size = (part->flash_size / part->flash_nb_sectors);
 	uint32_t ram_addr = (part->ram_base + part->ram_buff_offset);
+	uint32_t uuencode = part->uuencode;
 	uint32_t* v = NULL; /* Used for checksum computing */
 	uint32_t cksum = 0;
 
@@ -256,7 +259,7 @@ int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 			return ret;
 		}
 		/* Send data to RAM */
-		ret = isp_send_buf_to_ram(&data[i * write_size], ram_addr, write_size);
+		ret = isp_send_buf_to_ram(&data[i * write_size], ram_addr, write_size, uuencode);
 		if (ret != 0) {
 			printf("Unable to perform write-to-ram operation for block %d (block size: %d)\n",
 					i, write_size);

@@ -6,16 +6,19 @@
 
 # Line format :
 
-#       part info             |        flash             | reset  |       ram         |    ram
-#                             |                      nb  | vector |                   |   buffer   
-# part_id      part name      | base addr    size   sect | offset | base addr   size  |  off   size 
+#       part info             |        flash             | reset  |       ram         |    ram      |   UU
+#                             |                      nb  | vector |                   |   buffer    | encode
+# part_id      part name      | base addr    size   sect | offset | base addr   size  |  off   size |   ?
 
+# LPC81X Familly
+0x00008100, LPC810M021FN8,      0x00000000, 0x1000, 4,     0x04,    0x10000000, 0x0400, 0x300, 0x100,   0
+0x00008122, LPC812M101JDH20,    0x00000000, 0x4000, 16,    0x04,    0x10000000, 0x1000, 0x800, 0x400,   0
 
 # LPC11XX Familly
-0x2540102B, LPC1114FHN33/302,   0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x2000, 0x800, 0x400
+0x2540102B, LPC1114FHN33/302,   0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x2000, 0x800, 0x400,   1
 
 # LPC12XX Familly
-0x3640C02B, LPC1224FBD48/101,   0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x1000, 0x800, 0x400
+0x3640C02B, LPC1224FBD48/101,   0x00000000, 0x8000,  8,    0x04,    0x10000000, 0x1000, 0x800, 0x400,   1
 
 # LPC17XX Familly
-0x26011922, LPC1764FBD100,      0x00000000, 0x10000, 16,   0x04,    0x10000000, 0x4000, 0x800, 0x800
+0x26011922, LPC1764FBD100,      0x00000000, 0x10000, 16,   0x04,    0x10000000, 0x4000, 0x800, 0x800,   1

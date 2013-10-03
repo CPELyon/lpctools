@@ -32,6 +32,7 @@ struct part_desc {
 	uint32_t ram_size;
 	uint32_t ram_buff_offset; /* Used to transfer data for flashing */
 	uint32_t ram_buff_size;
+	uint32_t uuencode;
 };
 
 /* When looking for parts description in a file ee do allocate (malloc) two memory

@@ -464,7 +464,7 @@ int isp_read_memory(char* data, uint32_t addr, unsigned int count)
  * perform write-to-ram operation
  * send 'count' bytes from 'data' to 'addr' in RAM
  */
-int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count)
+int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count, unsigned int perform_uuencode)
 {
 	/* Serial communication */
 	int ret = 0, len = 0;
@@ -496,6 +496,17 @@ int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count)
 		if (datasize >= MAX_DATA_BLOCK_SIZE) {
 			datasize = MAX_DATA_BLOCK_SIZE;
 		}
+		if (perform_uuencode == 0) {
+			if (isp_serial_write(data + total_bytes_sent, datasize) != (int)datasize) {
+				printf("Error sending raw binary data.\n");
+				ret = -7;
+				break;
+			} else {
+				/* No checks required */
+				return ret;
+			}
+		}
+
 		/* uuencode data */
 		encoded_size = isp_uu_encode(buf, data + total_bytes_sent, datasize);
 		/* Add checksum */
@@ -505,12 +516,12 @@ int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count)
 			printf("Encoded Data :\n");
 			isp_dump((unsigned char*)buf, encoded_size);
 		}
-
 		if (isp_serial_write(buf, encoded_size) != (int)encoded_size) {
 			printf("Error sending uuencoded data.\n");
 			ret = -6;
 			break;
 		}
+
 		usleep( 20000 );
 		len = isp_serial_read(repbuf, REP_BUFSIZE, 4);
 		if (len <= 0) {

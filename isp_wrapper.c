@@ -91,8 +91,8 @@ int isp_cmd_read_memory(int arg_count, char** args)
 
 /*
  * write-to-ram
- * aruments : address file
- * send 'file' to 'address' in ram
+ * aruments : address file do_not_perform_uuencode
+ * send 'file' to 'address' in ram with or without uuencoding data
  */
 int isp_cmd_write_to_ram(int arg_count, char** args)
 {
@@ -102,9 +102,10 @@ int isp_cmd_write_to_ram(int arg_count, char** args)
 	char file_buff[RAM_MAX_SIZE];
 	unsigned int bytes_read = 0;
 	int ret = 0;
+	int uuencode = 1;
 
 	/* Check write-to-ram arguments */
-	if (arg_count != 2) {
+	if (arg_count < 2) {
 		printf("write-to-ram command needs ram address. Must be multiple of 4.\n");
 		return -15;
 	}
@@ -117,6 +118,9 @@ int isp_cmd_write_to_ram(int arg_count, char** args)
 		return -14;
 	}
 	in_file_name = args[1];
+	if (arg_count > 2) {
+		uuencode = strtoul(args[2], NULL, 0);
+	}
 
 	/* Read data */
 	bytes_read = isp_file_to_buff(file_buff, RAM_MAX_SIZE, in_file_name);
@@ -134,7 +138,7 @@ int isp_cmd_write_to_ram(int arg_count, char** args)
 	}
 
 	/* And send to ram */
-	ret = isp_send_buf_to_ram(file_buff, addr, bytes_read);
+	ret = isp_send_buf_to_ram(file_buff, addr, bytes_read, uuencode);
 
 	return ret;
 }
