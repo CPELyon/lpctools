@@ -369,7 +369,7 @@ static unsigned int calc_checksum(unsigned char* data, unsigned int size)
  * perform read-memory operation
  * read 'count' bytes from 'addr' to 'data' buffer
  */
-int isp_read_memory(char* data, uint32_t addr, unsigned int count)
+int isp_read_memory(char* data, uint32_t addr, unsigned int count, unsigned int uuencoded)
 {
 	/* Serial communication */
 	char buf[SERIAL_BUFSIZE];
@@ -384,6 +384,27 @@ int isp_read_memory(char* data, uint32_t addr, unsigned int count)
 	if (ret != 0) {
 		printf("Error when trying to read %u bytes of memory at address 0x%08x.\n", count, addr);
 		return ret;
+	}
+
+	if (uuencoded == 0) {
+		if (SERIAL_BUFSIZE < count) {
+			printf("Error when trying to read %u bytes of memory, buffer too small.\n", count);
+			printf("Read %d max bytes at a time.\n", SERIAL_BUFSIZE);
+			return -7;
+		}
+		len = isp_serial_read(buf, SERIAL_BUFSIZE, count);
+		if (len <= 0) {
+			printf("Error reading memory.\n");
+			return -6;
+		}
+		/* Wait some time before reading possible remaining data */
+		usleep( 1000 );
+		len += isp_serial_read((buf + len), (SERIAL_BUFSIZE - len), count);
+		if (len < 0) { /* Length may be null, as we may already have received everything */
+			printf("Error reading memory.\n");
+			return -5;
+		}
+		return len;
 	}
 
 	/* Now, find the number of blocks of the reply. */
@@ -480,6 +501,15 @@ int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count, 
 		return -8;
 	}
 
+	/* First check if we must UU-encode data */
+	if (perform_uuencode == 0) {
+		if (isp_serial_write(data, count) != (int)count) {
+			printf("Error sending raw binary data.\n");
+			return -7;
+		}
+		/* No checks required, we are done */
+		return 0;
+	}
 	/* Now, find the number of blocks of data to send. */
 	blocks = get_nb_blocks(count, "Sending");
 
@@ -495,16 +525,6 @@ int isp_send_buf_to_ram(char* data, unsigned long int addr, unsigned int count, 
 		datasize = (count - total_bytes_sent);
 		if (datasize >= MAX_DATA_BLOCK_SIZE) {
 			datasize = MAX_DATA_BLOCK_SIZE;
-		}
-		if (perform_uuencode == 0) {
-			if (isp_serial_write(data + total_bytes_sent, datasize) != (int)datasize) {
-				printf("Error sending raw binary data.\n");
-				ret = -7;
-				break;
-			} else {
-				/* No checks required */
-				return ret;
-			}
 		}
 
 		/* uuencode data */

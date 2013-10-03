@@ -38,8 +38,8 @@ extern int trace_on;
 
 /*
  * read-memory
- * aruments : address count file
- * read 'count' bytes from 'address', store then in 'file'
+ * aruments : address count file uuencoded
+ * read 'count' bytes from 'address', store then in 'file', and maybe decode uuencoded data.
  */
 int isp_cmd_read_memory(int arg_count, char** args)
 {
@@ -49,9 +49,10 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	/* Reply handling */
 	char* data;
 	int ret = 0, len = 0;
+	unsigned int uuencoded = 1;
 
 	/* Check read-memory arguments */
-	if (arg_count != 3) {
+	if (arg_count < 3) {
 		printf("read-memory command needs address and count. Both must be multiple of 4.\n");
 		return -12;
 	}
@@ -66,6 +67,9 @@ int isp_cmd_read_memory(int arg_count, char** args)
 		return -11;
 	}
 	out_file_name = args[2];
+	if (arg_count > 3) {
+		uuencoded = strtoul(args[3], NULL, 0);
+	}
 
 	/* Allocate buffer */
 	data = malloc(count);
@@ -75,7 +79,7 @@ int isp_cmd_read_memory(int arg_count, char** args)
 	}
 
 	/* Read data */
-	len = isp_read_memory(data, addr, count);
+	len = isp_read_memory(data, addr, count, uuencoded);
 	if (len != (int)count) {
 		printf("Read returned %d bytes instead of %lu.\n", len, count);
 	}

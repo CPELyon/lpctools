@@ -57,7 +57,7 @@ void help(char *prog_name)
 		"  command specific arguments are as follow:\n" \
 		"  \t unlock \n" \
 		"  \t write-to-ram address file uuencode : send 'file' to 'address' in ram with or without uuencoding\n" \
-		"  \t read-memory address count file : read 'count' bytes from 'address', store then in 'file'\n" \
+		"  \t read-memory address count file uuencoded : read 'count' bytes from 'address', store then in 'file' (maybe decode)\n" \
 		"  \t prepare-for-write first last : prepare sectors from 'first' to 'last' for write operation\n" \
 		"  \t copy-ram-to-flash flash_addr ram_addr count : copy count bytes (256, 512, 1024 or 4096)\n" \
 		"  \t     from 'ram_addr' to 'flash_addr'\n" \

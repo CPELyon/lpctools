@@ -71,7 +71,7 @@ int isp_cmd_read_memory(int arg_count, char** args);
  * perform read-memory operation
  * read 'count' bytes from 'addr' to 'data' buffer
  */
-int isp_read_memory(char* data, uint32_t addr, unsigned int count);
+int isp_read_memory(char* data, uint32_t addr, unsigned int count, unsigned int uuencoded);
 
 /*
  * write-to-ram

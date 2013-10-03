@@ -57,7 +57,7 @@ int dump_to_file(struct part_desc* part, char* filename)
 	}
 
 	/* Read data */
-	len = isp_read_memory(data, part->flash_base, part->flash_size);
+	len = isp_read_memory(data, part->flash_base, part->flash_size, part->uuencode);
 	if (len != (int)(part->flash_size)) {
 		printf("Read returned %d bytes instead of %u.\n", len, part->flash_size);
 	}
@@ -122,7 +122,7 @@ int start_prog(struct part_desc* part)
 	int ret = 0, len = 0;
 	uint32_t addr = 0;
 
-	len = isp_read_memory((char*)&addr, (part->flash_base + part->reset_vector_offset), sizeof(addr));
+	len = isp_read_memory((char*)&addr, (part->flash_base + part->reset_vector_offset), sizeof(addr), part->uuencode);
 	if (len != sizeof(addr)) {
 		printf("Unable to read reset address from flash.\n");
 		return len;
