@@ -6,30 +6,40 @@ CFLAGS += -Wall -Wextra -O2
 
 all: lpcisp lpcprog
 
-lpcisp: lpcisp.o isp_utils.o isp_commands.o isp_wrapper.o
 
-lpcprog: lpcprog.o isp_utils.o isp_commands.o prog_commands.o parts.o
+OBJDIR = objs
+SRC = $(shell find . -name \*.c)
+OBJS = ${SRC:%.c=${OBJDIR}/%.o}
 
+LPCISP_OBJS = ${OBJDIR}/lpcisp.o \
+		${OBJDIR}/isp_utils.o \
+		${OBJDIR}/isp_commands.o \
+		${OBJDIR}/isp_wrapper.o
+	
+LPCPROG_OBJS = ${OBJDIR}/lpcprog.o \
+		${OBJDIR}/isp_utils.o \
+		${OBJDIR}/isp_commands.o \
+		${OBJDIR}/prog_commands.o \
+		${OBJDIR}/parts.o
 
+lpcisp: $(LPCISP_OBJS)
+	@echo "Linking $@ ..."
+	@$(CC) $(CFLAGS) $(LPCISP_OBJS) -o $@
+	@echo Done.
 
-lpcisp.o: isp_utils.h isp_commands.h
+lpcprog: $(LPCPROG_OBJS)
+	@echo "Linking $@ ..."
+	@$(CC) $(CFLAGS) $(LPCPROG_OBJS) -o $@
+	@echo Done.
 
-isp_utils.o:
-
-isp_commands.o: isp_utils.h
-
-isp_wrapper.o: isp_utils.h isp_commands.h
-
-lpcprog.o: isp_utils.h isp_commands.h prog_commands.h parts.h
-
-prog_commands.o: isp_utils.h isp_commands.h parts.h
-
-parts.o: parts.h
-
+${OBJDIR}/%.o: %.c
+	@mkdir -p $(dir $@)
+	@echo "-- compiling" $<
+	@$(CC) -MMD -MP -MF ${OBJDIR}/$*.d $(CFLAGS) $< -c -o $@ 
 
 
 clean:
-	rm -f *.o
+	rm -f ${OBJDIR}/*
 mrproper: clean
 	rm -f lpcisp
 	rm -f lpcprog
