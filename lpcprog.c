@@ -6,10 +6,20 @@
  * provides wrappers for flashing a device.
  *
  *
- * Written by Nathael Pajani <nathael.pajani@nathael.net>
+ *  Copyright (C) 2012 Nathael Pajani <nathael.pajani@nathael.net>
  *
- * This programm is released under the terms of the GNU GPLv3 licence
- * as can be found on the GNU website : <http://www.gnu.org/licenses/>
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *********************************************************************/
 
@@ -37,7 +47,7 @@
 #include "parts.h"
 
 #define PROG_NAME "LPC ISP Prog tool"
-#define VERSION   "1.04"
+#define VERSION   "1.05"
 
 
 void help(char *prog_name)
@@ -53,11 +63,11 @@ void help(char *prog_name)
 		"  \t flash file_name : put 'file' to flash, erasing requiered sectors\n" \
 		"  \t blank : erase whole flash\n" \
 		"  \t id : get all id information\n" \
-		"  \t go : execute programm from reset handler in thumb mode and open terminal\n" \
+		"  \t go : execute program from reset handler in thumb mode and open terminal\n" \
 		"  Available options:\n" \
 		"  \t -p | --parts=file : Parts description file (see defaults)\n" \
 		"  \t -c | --command=cmd : \n" \
-		"  \t -d | --device=dev_path : Host serial line used to programm the device\n" \
+		"  \t -d | --device=dev_path : Host serial line used to program the device\n" \
 		"  \t -b | --baudrate=N : Use this baudrate (Same baudrate must be used across whole session)\n" \
 		"  \t -t | --trace : turn on trace output of serial communication\n" \
 		"  \t -f | --freq=N : Oscilator frequency of target device\n" \

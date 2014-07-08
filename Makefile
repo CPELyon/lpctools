@@ -24,18 +24,18 @@ LPCPROG_OBJS = ${OBJDIR}/lpcprog.o \
 
 lpcisp: $(LPCISP_OBJS)
 	@echo "Linking $@ ..."
-	@$(CC) $(CFLAGS) $(LPCISP_OBJS) -o $@
+	@$(CC) $(LDFLAGS) $(LPCISP_OBJS) -o $@
 	@echo Done.
 
 lpcprog: $(LPCPROG_OBJS)
 	@echo "Linking $@ ..."
-	@$(CC) $(CFLAGS) $(LPCPROG_OBJS) -o $@
+	@$(CC) $(LDFLAGS) $(LPCPROG_OBJS) -o $@
 	@echo Done.
 
 ${OBJDIR}/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo "-- compiling" $<
-	@$(CC) -MMD -MP -MF ${OBJDIR}/$*.d $(CFLAGS) $< -c -o $@ 
+	@$(CC) -MMD -MP -MF ${OBJDIR}/$*.d $(CPPFLAGS) $(CFLAGS) $< -c -o $@
 
 
 clean:

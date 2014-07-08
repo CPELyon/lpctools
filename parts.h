@@ -3,10 +3,20 @@
  *   LPC Parts identification
  *
  *
- * Written by Nathael Pajani <nathael.pajani@nathael.net>
+ *  Copyright (C) 2012 Nathael Pajani <nathael.pajani@nathael.net>
  *
- * This programm is released under the terms of the GNU GPLv3 licence
- * as can be found on the GNU website : <http://www.gnu.org/licenses/>
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *********************************************************************/
 
@@ -37,7 +47,7 @@ struct part_desc {
 
 /* When looking for parts description in a file ee do allocate (malloc) two memory
  *   chunks which we will never free.
- * The user should free part_desc->name and part_desc when they are no more usefull
+ * The user should free part_desc->name and part_desc when they are no more useful
  */
 struct part_desc* find_part_in_file(uint64_t dev_id, char* conf_file_name);
 

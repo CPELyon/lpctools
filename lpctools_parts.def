@@ -1,4 +1,8 @@
 # Parts definition file
+#
+# Note that the version of this file found in /etc should not be modified to ease programm update.
+# Instead place a copy in your project directory or specify an alternative using the appropriate option.
+#
 # Lines starting whith # are comments
 # All values but the last one MUST be immediately followed by a coma (',') and can be precedeed by
 #  any number of whitespaces.

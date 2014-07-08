@@ -2,13 +2,23 @@
  *
  *   ISP (In-System Programming) tool for NXP LPC Microcontrollers
  *
- * This tool gives access to each of the usefull isp commands on LPC
+ * This tool gives access to each of the useful isp commands on LPC
  * devices. It does not provide wrappers for flashing a device.
  *
- * Written by Nathael Pajani <nathael.pajani@nathael.net>
+ *  Copyright (C) 2012 Nathael Pajani <nathael.pajani@nathael.net>
  *
- * This programm is released under the terms of the GNU GPLv3 licence
- * as can be found on the GNU website : <http://www.gnu.org/licenses/>
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *********************************************************************/
 
@@ -34,7 +44,7 @@
 #include "isp_commands.h"
 
 #define PROG_NAME "LPC ISP"
-#define VERSION   "1.04"
+#define VERSION   "1.05"
 
 /* short explanation on exit values:
  *
@@ -50,7 +60,7 @@ void help(char *prog_name)
 	fprintf(stderr, "Usage: %s [options] device [-s | --synchronize]\n" \
 		"       %s [options] device command [command arguments]\n" \
 		"  Default baudrate is B115200\n" \
-		"  <device> is the (host) serial line used to programm the device\n" \
+		"  <device> is the (host) serial line used to program the device\n" \
 		"  <command> is one of:\n" \
 		"  \t unlock, write-to-ram, read-memory, prepare-for-write, copy-ram-to-flash, go, erase,\n" \
 		"  \t blank-check, read-part-id, read-boot-version, compare and read-uid.\n" \
@@ -61,7 +71,7 @@ void help(char *prog_name)
 		"  \t prepare-for-write first last : prepare sectors from 'first' to 'last' for write operation\n" \
 		"  \t copy-ram-to-flash flash_addr ram_addr count : copy count bytes (256, 512, 1024 or 4096)\n" \
 		"  \t     from 'ram_addr' to 'flash_addr'\n" \
-		"  \t go address mode : execute programm at 'address' (> 0x200) in 'mode' ('arm' or 'thumb')\n" \
+		"  \t go address mode : execute program at 'address' (> 0x200) in 'mode' ('arm' or 'thumb')\n" \
 		"  \t erase first last : erase flash starting from 'first' sector up to (including) 'last' sector \n" \
 		"  \t blank-check first last : check flash starting from 'first' sector to 'last' sector is blank\n" \
 		"  \t read-part-id \n" \

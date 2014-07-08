@@ -1,4 +1,4 @@
-.TH LPCPROG "1" "August 2013" "LPC Tools 1.04" "User development Tools"
+.TH LPCPROG "1" "August 2013" "LPC Tools 1.05" "User development Tools"
 .SH NAME
 lpcprog \- NXP's LPC micro-controllers flasher
 .SH SYNOPSIS
@@ -25,7 +25,7 @@ FILES section for more information on default parts desription files and order o
 precedence.
 .TP
 \fB\-d\fR, \fB\-\-device\fR=\fIDEV\fR
-Use DEV as host serial line to programm the target. Full path must be provided.
+Use DEV as host serial line to program the target. Full path must be provided.
 Device node files are usually located in /dev/ directory.
 .TP
 \fB\-c\fR, \fB\-\-command\fR=\fICOMMAND\fR
@@ -33,7 +33,7 @@ Command to execute. COMMAND must be one of \fBid\fR, \fBdump\fR, \fBflash\fR,
 \fBblank\fR or \fBgo\fR.
 See COMMANDS section for commands description.
 .TP
-\fB\-b\fR, --baudrate=BAUD
+\fB\-b\fR, \fB\-\-baudrate\fR=\fIBAUD\fR
 Use BAUD as the baudrate for communication with the target device. Defaults to
 115200.
 .TP
@@ -75,14 +75,14 @@ Erase the whole flash.
 .TP
 \fBgo\fR
 Unsupported Yet. Reset the target using hardware reset button or power cycle the
-device to start the programm.
+device to start the program.
 .SH "PARTS DESCRIPTION FILES"
 Default parts description files are /etc/lpctools_parts.def or ./lpctools_parts.def
 The parts description file is parsed for LPC device description for dump, blank, and
 flash commands. If none of the defaults exist and no existing file is supplied
 using \fB\-p\fR option, these command cannot execute. If the part description is not
 found in the first found file, the command will not execute either.
-If no \fB\-p\fR option is provided, the programm looks for lpctools_parts.def in the
+If no \fB\-p\fR option is provided, the program looks for lpctools_parts.def in the
 current directory first, and then in the /etc/ directory.
 .PP
 The content of parts description files is a list of LPC parts description.
@@ -91,7 +91,7 @@ Refer to the default file found in the /etc/ directory for more information on t
 line format.
 .SH "USER CODE"
 A valid User Code is requiered by the LPC bootloader to start the internal user
-programm. User Code is considered valid if the reserved exception vector location 7
+program. User Code is considered valid if the reserved exception vector location 7
 (offset 0x 0000 001C in the vector table) contains the 2’s complement of the
 check-sum of table entries 0 through 6. This causes the checksum of the first 8
 table entries to be 0.
@@ -99,17 +99,20 @@ table entries to be 0.
 If the signature is not valid the LPC enters ISP mode.
 .PP
 The default behavior of \fBlpcprog\fR is to compute a valid code for the 7th
-exception vector and modify the programmed binary data to include this valid code.
+exception vector and modify the programed binary data to include this valid code.
 You can prevent this by using \fB\-n\fR option.
 .SH "ISP MODE AND CODE READ PROTECTION"
 Code Read Protection is a mechanism that allows "the user" to enable different
 levels of "security" in the system so that access to the on-chip flash and use of
-the ISP can be restricted. When needed, CRP is invoked by programming a specific
+the ISP can be restricted. When needed, CRP is invoked by programing a specific
 pattern in flash location at 0x0000 02FC. IAP commands are not affected by the
 code read protection.
 .PP
 If your device Does not enter ISP state, or if some commands do not succeed, it may
 be because the CRP mechanism is in use on your device.
+.PP
+Code Read Protection will not be implemented as it goes against the license of this
+tool and against the free software philosophy.
 .SH AUTHOR
 Written by Nathael Pajani.
 .SH "REPORTING BUGS"
