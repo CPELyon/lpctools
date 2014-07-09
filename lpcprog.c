@@ -47,7 +47,7 @@
 #include "parts.h"
 
 #define PROG_NAME "LPC ISP Prog tool"
-#define VERSION   "1.05"
+#define VERSION   "1.06"
 
 
 void help(char *prog_name)

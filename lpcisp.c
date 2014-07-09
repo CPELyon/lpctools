@@ -44,7 +44,7 @@
 #include "isp_commands.h"
 
 #define PROG_NAME "LPC ISP"
-#define VERSION   "1.05"
+#define VERSION   "1.06"
 
 /* short explanation on exit values:
  *
