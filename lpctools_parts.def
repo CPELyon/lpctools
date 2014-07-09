@@ -1,6 +1,6 @@
 # Parts definition file
 #
-# Note that the version of this file found in /etc should not be modified to ease programm update.
+# Note that the version of this file found in /etc should not be modified to ease program update.
 # Instead place a copy in your project directory or specify an alternative using the appropriate option.
 #
 # Lines starting whith # are comments
