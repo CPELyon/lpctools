@@ -58,7 +58,7 @@ struct part_desc* find_part_in_file(uint64_t dev_id, char* parts_file_name)
 			goto out_err_1;
 		}
 		line++; /* Store current line number to help parts description file correction */
-		if (buf[0] == '#') {
+		if (buf[0] == '#' || buf[0] == '\n') {
 			/* skip comments */
 			continue;
 		}
@@ -94,6 +94,7 @@ struct part_desc* find_part_in_file(uint64_t dev_id, char* parts_file_name)
 		nval = ((sizeof(struct part_desc) - offsetof(struct part_desc, flash_base)) / sizeof(uint32_t));
 		part_values = &(part->flash_base); /* Use a table to read the data, we do not care of what the data is */
 		for (i = 0; i < nval; i++) {
+			errno = 0;
 			part_values[i] = strtoul((endp + 1), &endp, 0);
 			if ((part_values[i] == 0) && (errno == EINVAL)) {
 				printf("Malformed parts description file at line %d, error reading value %d\n", line, i);

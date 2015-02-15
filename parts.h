@@ -32,6 +32,7 @@
 struct part_desc {
 	uint64_t part_id;
 	char* name;
+	uint32_t pad;
 	/* Flash */
 	uint32_t flash_base;
 	uint32_t flash_size;
