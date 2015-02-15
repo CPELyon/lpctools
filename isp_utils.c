@@ -139,18 +139,30 @@ void isp_serial_close(void)
 /* Simple write() wrapper, with trace if enabled */
 int isp_serial_write(const char* buf, unsigned int buf_size)
 {
-	int nb = 0;
+	int nb;
+	unsigned int count = 0;
+	unsigned int loops = 0; /* Used to create a timeout */
 
 	if (trace_on) {
 		printf("Sending %d octet(s) :\n", buf_size);
 		isp_dump((unsigned char*)buf, buf_size);
 	}
-	nb = write(serial_fd, buf, buf_size);
-	if (nb <= 0) {
-		perror("Serial write error");
-		return -1;
-	}
-	return nb;
+	do {
+		nb = write(serial_fd, buf + count, buf_size - count);
+		if (nb < 0) {
+			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+				if (loops++ > 100) {
+					break; /* timeout at 500ms */
+				}
+				usleep( 5000 );
+				continue;
+			}
+			perror("Serial write error");
+			return -1;
+		}
+		count += nb;
+	} while (count < buf_size);
+	return count;
 }
 
 static char next_read_char = 0;
@@ -242,8 +254,8 @@ int isp_serial_read(char* buf, unsigned int buf_size, unsigned int min_read)
  *  a full window manager (or MTA or MUA for instance) for two functions is not an
  *  option */
 #define UUENCODE_ADDED_VAL 32
+#define UUENCODE_ZERO 96
 #define LINE_DATA_LENGTH_MAX 45
-#define LINE_LENGTH_NULL 96
 
 int isp_uu_encode(char* dest, char* src, unsigned int orig_size)
 {
@@ -278,7 +290,11 @@ int isp_uu_encode(char* dest, char* src, unsigned int orig_size)
 				/* Store triplet in four bytes */
 				dest[new_size + j] = ((int_triplet >> (6 * (3 - j))) & 0x3F);
 				/* Add offset */
-				dest[new_size + j] += UUENCODE_ADDED_VAL;
+				if (dest[new_size + j]) {
+					dest[new_size + j] += UUENCODE_ADDED_VAL;
+				} else {
+					dest[new_size + j] = UUENCODE_ZERO;
+				}
 			}
 			i += 3;
 			new_size += 4;
@@ -304,7 +320,7 @@ int isp_uu_decode(char* dest, char* src, unsigned int orig_size)
 
 		/* Read line length */
 		line_length = src[pos] - UUENCODE_ADDED_VAL;
-		if (src[pos] == LINE_LENGTH_NULL) {
+		if (src[pos] == UUENCODE_ZERO) {
 			/* Empty line ? then we are done converting
 			 * (should not happen in communication with ISP) */
 			return new_size;
