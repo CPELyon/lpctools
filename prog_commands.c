@@ -239,7 +239,7 @@ int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 	if (calc_user_code == 1) {
 		v[7] = cksum;
 	} else if (cksum != v[7]) {
-		printf("Checksum is 0x%08x, should be 0x%08x\n", cksum, v[7]);
+		printf("Checksum is 0x%08x, should be 0x%08x\n", v[7], cksum);
 		free(data);
 		return -5;
 	}
