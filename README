@@ -16,6 +16,11 @@ Both programs were originally written by Nathael Pajani
 under non-free licences, did not allow comercial use, or did not
 provide source code.
 
+* lpc_binary_check:
+This third tool is an additionnal helper programm created to change the
+user code and check that the CRP protection is not enabled in a binary
+image so that it can be uploaded to a target with different tools.
+
 These programs are released under the terms of the GNU GPLv3 licence
 as can be found on the GNU website : <http://www.gnu.org/licenses/>
 or in the included LICENSE file.

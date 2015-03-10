@@ -4,7 +4,7 @@ CC = $(CROSS_COMPILE)gcc
 
 CFLAGS += -Wall -Wextra -O2
 
-all: lpcisp lpcprog
+all: lpcisp lpcprog lpc_binary_check
 
 
 OBJDIR = objs
@@ -22,6 +22,9 @@ LPCPROG_OBJS = ${OBJDIR}/lpcprog.o \
 		${OBJDIR}/prog_commands.o \
 		${OBJDIR}/parts.o
 
+LPCCHECK_OBJS = ${OBJDIR}/check.o \
+		${OBJDIR}/isp_utils.o
+
 lpcisp: $(LPCISP_OBJS)
 	@echo "Linking $@ ..."
 	@$(CC) $(LDFLAGS) $(LPCISP_OBJS) -o $@
@@ -30,6 +33,11 @@ lpcisp: $(LPCISP_OBJS)
 lpcprog: $(LPCPROG_OBJS)
 	@echo "Linking $@ ..."
 	@$(CC) $(LDFLAGS) $(LPCPROG_OBJS) -o $@
+	@echo Done.
+
+lpc_binary_check: $(LPCCHECK_OBJS)
+	@echo "Linking $@ ..."
+	@$(CC) $(LDFLAGS) $(LPCCHECK_OBJS) -o $@
 	@echo Done.
 
 ${OBJDIR}/%.o: %.c

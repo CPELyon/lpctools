@@ -18,4 +18,5 @@
 *.dump
 lpcisp
 lpcprog
+lpc_binary_check
 tags
