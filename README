@@ -16,7 +16,7 @@ Both programs were originally written by Nathael Pajani
 under non-free licences, did not allow comercial use, or did not
 provide source code.
 
-This program is released under the terms of the GNU GPLv3 licence
+These programs are released under the terms of the GNU GPLv3 licence
 as can be found on the GNU website : <http://www.gnu.org/licenses/>
 or in the included LICENSE file.
 
@@ -26,7 +26,7 @@ TODO :
 
 Allow flashing of parts with flash sectors of different sizes (LPC1764
 has 16 small 4k sectors and two big 32k sectors).
---> Need to change parts definition format.
+--> Need either to change parts definition format or to flash in two times.
 
 Add the definition of all LPC parts ?
 

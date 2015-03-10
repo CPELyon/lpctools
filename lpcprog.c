@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 				crystal_freq = atoi(optarg);
 				break;
 
-			/* u, user-code */
+			/* n, user-code */
 			case 'n':
 				calc_user_code = 0;
 				break;

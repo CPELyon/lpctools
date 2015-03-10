@@ -29,7 +29,7 @@ int dump_to_file(struct part_desc* part, char* filename);
 
 int erase_flash(struct part_desc* part);
 
-int flash_target(struct part_desc* part, char* filename, int check);
+int flash_target(struct part_desc* part, char* filename, int check_user_code);
 
 int get_ids(void);
 
