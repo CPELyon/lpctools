@@ -28,7 +28,5 @@ Allow flashing of parts with flash sectors of different sizes (LPC1764
 has 16 small 4k sectors and two big 32k sectors).
 --> Need to change parts definition format.
 
-Prevent unwanted writting of Code Read Protection values.
-
 Add the definition of all LPC parts ?
 

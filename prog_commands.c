@@ -196,6 +196,7 @@ int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 	uint32_t uuencode = part->uuencode;
 	uint32_t* v = NULL; /* Used for checksum computing */
 	uint32_t cksum = 0;
+	uint32_t crp = 0;
 
 	/**  Sanity checks  *********************************/
 	/* RAM buffer address within RAM */
@@ -244,6 +245,16 @@ int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 	}
 	printf("Checksum check OK\n");
 
+	crp = v[(CRP_OFFSET / 4)];
+	if ((crp == CRP_NO_ISP) || (crp == CRP_CRP1) || (crp == CRP_CRP2) || (crp == CRP_CRP3)) {
+		printf("CRP : 0x%08x\n", crp);
+		printf("The binary has CRP protection ativated, which violates GPLv3.\n");
+		printf("Check the licence for the software you are using, and if this is allowed,\n");
+		printf(" then modify this software to allow flashing of code with CRP protection\n");
+		printf(" activated. (Or use another software).\n");
+		return -6;
+	}
+
 	blocks = (size / write_size) + ((size % write_size) ? 1 : 0);
 	/* Gonna write out of flash ? */
 	if ((blocks * write_size) > part->flash_size) {
@@ -251,7 +262,7 @@ int flash_target(struct part_desc* part, char* filename, int calc_user_code)
 		printf("Flash size : %d, trying to flash %d blocks of %d bytes : %d\n",
 				part->flash_size, blocks, write_size, (blocks * write_size));
 		free(data);
-		return -6;
+		return -7;
 	}
 	printf("Flash size : %d, trying to flash %d blocks of %d bytes : %d\n",
 			part->flash_size, blocks, write_size, (blocks * write_size));

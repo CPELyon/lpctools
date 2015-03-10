@@ -24,6 +24,15 @@
 #ifndef ISP_UTILS_H
 #define ISP_UTILS_H
 
+
+/* ---- CRP Protection values ---------------------------------------------------*/
+#define CRP_OFFSET  0x000002FC
+#define CRP_NO_ISP  0x4E697370
+#define CRP_CRP1    0x12345678
+#define CRP_CRP2    0x87654321
+#define CRP_CRP3    0x43218765
+
+
 void isp_dump(const unsigned char* buf, unsigned int buf_size);
 
 
